@@ -1,0 +1,12 @@
+numpy
+pandas
+pyarrow
+pelicun
+matplotlib
+seaborn
+flake8
+pylint
+autopep8
+yapf
+black
+black-macchiato
