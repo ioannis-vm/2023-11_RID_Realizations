@@ -196,7 +196,7 @@ class Model_1_Weibull(Model):
         lamda_val = self.lamda_fnc(pid, c_lamda_0, c_pid_0, c_lamda_slope)
         return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
 
-    def get_objective(self, params):
+    def get_mle_objective(self, params):
         c_lamda, c_pid_0, c_lamda_slope, c_kapa = params
         density = self.evaluate_pdf(
             self.raw_rid, self.raw_pid, c_lamda, c_pid_0, c_lamda_slope, c_kapa
@@ -219,10 +219,10 @@ class Model_1_Weibull(Model):
         c_lamda_slope = 0.30
         c_kapa = 1.30
 
-        # self.get_objective((c_lamda, c_pid_0, c_lamda_slope, c_kapa))
+        # self.get_mle_objective((c_lamda, c_pid_0, c_lamda_slope, c_kapa))
 
         result = minimize(
-            self.get_objective,
+            self.get_mle_objective,
             [c_lamda, c_pid_0, c_lamda_slope, c_kapa],
             method="Nelder-Mead",
             options={"maxiter": 20000},
@@ -231,7 +231,6 @@ class Model_1_Weibull(Model):
         self.fit_meta = result
         assert result.success, "Minimization failed."
         self.params = result.x
-
 
 
 from src.handle_data import load_dataset
@@ -253,7 +252,7 @@ def main():
     # model = Model_0_P58(pid_vals, rid_vals)
 
     model.fit()
-    model.fit(0.007, 0.90)
+    # model.fit(0.007, 0.90)
     fig, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
@@ -269,7 +268,7 @@ def main():
     ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
-    # model.get_objective(model.params)
+    # model.get_mle_objective(model.params)
 
     # slice
     pid_min = 0.007
