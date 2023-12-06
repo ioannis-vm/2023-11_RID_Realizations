@@ -23,7 +23,53 @@ class Model:
         self.params = None
         self.fit_status = False
         self.fit_meta = None
-    
+
+        self.rolling_pid = None
+        self.rolling_rid_50 = None
+        self.rolling_rid_20 = None
+        self.rolling_rid_80 = None
+        self.calculate_rolling_quantiles()
+
+    def calculate_rolling_quantiles(self):
+
+        # calculate rolling empirical RID|PID quantiles
+        idsort = np.argsort(self.raw_pid)
+        num_vals = len(self.raw_pid)
+        assert len(self.raw_rid) == num_vals
+        rid_vals_sorted = self.raw_rid[idsort]
+        pid_vals_sorted = self.raw_pid[idsort]
+        group_size = int(len(self.raw_rid) * 0.10)
+        rolling_pid = np.array(
+            [
+                np.mean(pid_vals_sorted[i : i + group_size])
+                for i in range(num_vals - group_size + 1)
+            ]
+        )
+        rolling_rid_50 = np.array(
+            [
+                np.quantile(rid_vals_sorted[i : i + group_size], 0.50)
+                for i in range(num_vals - group_size + 1)
+            ]
+        )
+        rolling_rid_20 = np.array(
+            [
+                np.quantile(rid_vals_sorted[i : i + group_size], 0.20)
+                for i in range(num_vals - group_size + 1)
+            ]
+        )
+        rolling_rid_80 = np.array(
+            [
+                np.quantile(rid_vals_sorted[i : i + group_size], 0.80)
+                for i in range(num_vals - group_size + 1)
+            ]
+        )
+
+        self.rolling_pid = rolling_pid
+        self.rolling_rid_50 = rolling_rid_50
+        self.rolling_rid_20 = rolling_rid_20
+        self.rolling_rid_80 = rolling_rid_80
+
+
     def plot_data(self, ax=None):
         """
         Add a scatter plot of the raw data to a matplotlib axis, or
@@ -71,49 +117,15 @@ class Model:
         rid_vals = self.raw_rid
         pid_vals = self.raw_pid
 
-        # calculate rolling empirical RID|PID quantiles
-        idsort = np.argsort(pid_vals)
-        num_vals = len(pid_vals)
-        assert len(rid_vals) == num_vals
-        rid_vals_sorted = rid_vals[idsort]
-        pid_vals_sorted = pid_vals[idsort]
-        group_size = int(len(rid_vals) * 0.10)
-        rolling_pid = np.array(
-            [
-                np.mean(pid_vals_sorted[i : i + group_size])
-                for i in range(num_vals - group_size + 1)
-            ]
-        )
-        rolling_rid_50 = np.array(
-            [
-                np.quantile(rid_vals_sorted[i : i + group_size], 0.50)
-                for i in range(num_vals - group_size + 1)
-            ]
-        )
-        rolling_rid_20 = np.array(
-            [
-                np.quantile(rid_vals_sorted[i : i + group_size], 0.20)
-                for i in range(num_vals - group_size + 1)
-            ]
-        )
-        rolling_rid_80 = np.array(
-            [
-                np.quantile(rid_vals_sorted[i : i + group_size], 0.80)
-                for i in range(num_vals - group_size + 1)
-            ]
-        )
-
-        # calculate the model's RID|PID quantiles
-        # model_pid = np.linspace(0.00, 0.01, 1000)
-        model_pid = rolling_pid
+        model_pid = np.linspace(0.00, self.rolling_pid[-1], 1000)
         model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
         model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
         model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
 
         self.plot_data(ax)
-        ax.plot(rolling_rid_50, rolling_pid, 'k')
-        ax.plot(rolling_rid_20, rolling_pid, 'k', linestyle='dashed')
-        ax.plot(rolling_rid_80, rolling_pid, 'k', linestyle='dashed')
+        ax.plot(self.rolling_rid_50, self.rolling_pid, 'k')
+        ax.plot(self.rolling_rid_20, self.rolling_pid, 'k', linestyle='dashed')
+        ax.plot(self.rolling_rid_80, self.rolling_pid, 'k', linestyle='dashed')
         ax.plot(model_rid_50, model_pid, 'C0')
         ax.plot(model_rid_20, model_pid, 'C0', linestyle='dashed')
         ax.plot(model_rid_80, model_pid, 'C0', linestyle='dashed')
@@ -143,7 +155,7 @@ class Model_0_P58(Model):
         delta[mask] = pid[mask] - 3.00 * delta_y
         return delta
 
-    def fit(self, delta_y, beta):
+    def fit(self, delta_y, beta, **kwargs):
         """
         The P-58 model requires the user to specify the parameters
         directly.
@@ -201,19 +213,33 @@ class Model_1_Weibull(Model):
         density = self.evaluate_pdf(
             self.raw_rid, self.raw_pid, c_lamda, c_pid_0, c_lamda_slope, c_kapa
         )
-
-        # zero_idx = np.argwhere(density < 1e-6).reshape(-1)
-        # nozr_idx = np.argwhere(density >= 1e-6).reshape(-1)
-        # plt.scatter(rid_vals[zero_idx], pid_vals[zero_idx], color='red')
-        # plt.scatter(rid_vals[nozr_idx], pid_vals[nozr_idx], color='blue', s=2)
-        # plt.show()
-
-        # density += 1.00               # regularization
         density[density < 1e-6] = 1e-6  # outlier removal
         negloglikelihood = -np.sum(np.log(density))
         return negloglikelihood
 
-    def fit(self):
+    def get_quantile_objective(self, params):
+
+        # update the parameters
+        self.params = params
+
+        # calculate the model's RID|PID quantiles
+        model_pid = self.rolling_pid
+        model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
+        model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
+        model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
+
+        loss = (
+            (self.rolling_rid_50 - model_rid_50).T
+            @ (self.rolling_rid_50 - model_rid_50)
+            + (self.rolling_rid_20 - model_rid_20).T
+            @ (self.rolling_rid_20 - model_rid_20)
+            + (self.rolling_rid_80 - model_rid_80).T
+            @ (self.rolling_rid_80 - model_rid_80)
+        )
+
+        return loss
+
+    def fit(self, method='quantile', **kwargs):
         c_lamda = 1e-12
         c_pid_0 = 0.008
         c_lamda_slope = 0.30
@@ -221,8 +247,13 @@ class Model_1_Weibull(Model):
 
         # self.get_mle_objective((c_lamda, c_pid_0, c_lamda_slope, c_kapa))
 
+        if method == 'quantiles':
+            use_method = self.get_quantile_objective
+        elif method == 'mle':
+            use_method = self.get_mle_objective
+
         result = minimize(
-            self.get_mle_objective,
+            use_method,
             [c_lamda, c_pid_0, c_lamda_slope, c_kapa],
             method="Nelder-Mead",
             options={"maxiter": 20000},
@@ -233,14 +264,16 @@ class Model_1_Weibull(Model):
         self.params = result.x
 
 
-from src.handle_data import load_dataset
-from src.handle_data import remove_collapse
-from src.handle_data import only_drifts
-
-
 def main():
+    """
+    This is not the right place for this method: will be moved.
+    """
 
-    the_case = ("smrf", "9", "ii", "1", "1")
+    from src.handle_data import load_dataset
+    from src.handle_data import remove_collapse
+    from src.handle_data import only_drifts
+
+    the_case = ("smrf", "9", "ii", "3", "1")
 
     df = only_drifts(remove_collapse(load_dataset()[0]))
     case_df = df[the_case]
@@ -248,30 +281,43 @@ def main():
     rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
     pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
 
+    # FEMA P-58
+
+    model = Model_0_P58(pid_vals, rid_vals)
+
+    model.fit(0.007, 0.90)      # values hand-picked for ("smrf", "9", "ii", "1", "1")
+
+    fig, ax = plt.subplots()
+    model.plot_model(ax)
+    ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
+    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
+    plt.show()
+
+
+    # Weibull, MLE
+
     model = Model_1_Weibull(pid_vals, rid_vals)
-    # model = Model_0_P58(pid_vals, rid_vals)
 
-    model.fit()
-    # model.fit(0.007, 0.90)
+    model.fit(method='mle')
     fig, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
     ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
-    # manual fit...
-    #               c_lamda,    c_pid_0, c_lamda_slope, c_kapa
-    model.params = (1.0e-12,  0.007,   5.0e-01,       1.0)
+    # Weibull, quantile regression
+
+    model = Model_1_Weibull(pid_vals, rid_vals)
+
+    model.fit(method='quantiles')
     fig, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
     ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
-    # model.get_mle_objective(model.params)
-
-    # slice
-    pid_min = 0.007
+    # plot a slice
+    pid_min = 0.01
     pid_max = 0.012
     fig, ax = plt.subplots()
     model.plot_slice(ax, pid_min, pid_max)
