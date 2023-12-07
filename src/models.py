@@ -117,7 +117,8 @@ class Model:
         rid_vals = self.raw_rid
         pid_vals = self.raw_pid
 
-        model_pid = np.linspace(0.00, self.rolling_pid[-1], 1000)
+        # model_pid = np.linspace(0.00, self.rolling_pid[-1], 1000)
+        model_pid = np.linspace(0.00, 0.08, 1000)
         model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
         model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
         model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
@@ -139,7 +140,7 @@ class Model:
         sns.ecdfplot(vals, color=f'C0', ax=ax)
         x = np.linspace(0.00, 0.05, 1000)
         y = self.evaluate_cdf(x, np.array((midpoint,)))
-        ax.plot(x, y, color='C0')
+        ax.plot(x, y, color='C1')
 
 
 class Model_0_P58(Model):
@@ -273,7 +274,9 @@ def main():
     from src.handle_data import remove_collapse
     from src.handle_data import only_drifts
 
-    the_case = ("smrf", "9", "ii", "3", "1")
+    the_case = ("smrf", "3", "ii", "1", "1")
+    # the_case = ("scbf", "9", "ii", "3", "1")
+    # the_case = ("brbf", "9", "ii", "1", "1")
 
     df = only_drifts(remove_collapse(load_dataset()[0]))
     case_df = df[the_case]
@@ -299,10 +302,18 @@ def main():
     model = Model_1_Weibull(pid_vals, rid_vals)
 
     model.fit(method='mle')
+
     fig, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
     ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
+    plt.show()
+
+    # plot a slice
+    pid_min = 0.01
+    pid_max = 0.012
+    fig, ax = plt.subplots()
+    model.plot_slice(ax, pid_min, pid_max)
     plt.show()
 
     # Weibull, quantile regression
@@ -310,6 +321,7 @@ def main():
     model = Model_1_Weibull(pid_vals, rid_vals)
 
     model.fit(method='quantiles')
+
     fig, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
