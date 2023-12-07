@@ -185,37 +185,45 @@ class Model_1_Weibull(Model):
     Weibull model
     """
 
-    def lamda_fnc(self, pid, c_lamda_0, c_pid_0, c_lamda_slope):
+    def lamda_fnc(self, pid, c_pid_0, c_lamda_slope):
+        c_lamda_0 = 1.0e-8
         lamda = np.ones_like(pid) * c_lamda_0
         mask = pid >= c_pid_0
         lamda[mask] = (pid[mask] - c_pid_0) * c_lamda_slope + c_lamda_0
         return lamda
 
-    def evaluate_pdf(self, rid, pid, c_lamda_0, c_pid_0, c_lamda_slope, c_kapa):
-        lamda_val = self.lamda_fnc(pid, c_lamda_0, c_pid_0, c_lamda_slope)
-        return (
+    def evaluate_pdf(self, rid, pid, c_pid_0, c_lamda_slope, c_kapa, censoring_limit=None):
+        lamda_val = self.lamda_fnc(pid, c_pid_0, c_lamda_slope)
+        pdf_val =  (
             np.exp(-((rid / lamda_val) ** c_kapa))
             * c_kapa
             * (rid / lamda_val) ** (c_kapa - 1.00)
         ) / lamda_val
+        if censoring_limit:
+            censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
+            mask = rid <= censoring_limit
+            pdf_val[mask] = censored_range_mass[mask]
+        return pdf_val
 
     def evaluate_cdf(self, rid, pid):
-        c_lamda_0, c_pid_0, c_lamda_slope, c_kapa = self.params
-        lamda_val = self.lamda_fnc(pid, c_lamda_0, c_pid_0, c_lamda_slope)
+        c_pid_0, c_lamda_slope, c_kapa = self.params
+        lamda_val = self.lamda_fnc(pid, c_pid_0, c_lamda_slope)
         return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
 
     def evaluate_inverse_cdf(self, q, pid):
-        c_lamda_0, c_pid_0, c_lamda_slope, c_kapa = self.params
-        lamda_val = self.lamda_fnc(pid, c_lamda_0, c_pid_0, c_lamda_slope)
+        c_pid_0, c_lamda_slope, c_kapa = self.params
+        lamda_val = self.lamda_fnc(pid, c_pid_0, c_lamda_slope)
         return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
 
     def get_mle_objective(self, params):
-        c_lamda, c_pid_0, c_lamda_slope, c_kapa = params
+        c_pid_0, c_lamda_slope, c_kapa = params
         density = self.evaluate_pdf(
-            self.raw_rid, self.raw_pid, c_lamda, c_pid_0, c_lamda_slope, c_kapa
+            self.raw_rid, self.raw_pid, c_pid_0, c_lamda_slope, c_kapa, 0.002
         )
-        density[density < 1e-6] = 1e-6  # outlier removal
-        negloglikelihood = -np.sum(np.log(density))
+        weights = np.ones_like(density)
+        mask = (self.raw_pid > 0.002) & (self.raw_pid < 0.015)
+        weights[mask] = 1.0     # no weights
+        negloglikelihood = -np.sum(np.log(density) * weights)
         return negloglikelihood
 
     def get_quantile_objective(self, params):
@@ -241,10 +249,11 @@ class Model_1_Weibull(Model):
         return loss
 
     def fit(self, method='quantile', **kwargs):
-        c_lamda = 1e-12
         c_pid_0 = 0.008
         c_lamda_slope = 0.30
         c_kapa = 1.30
+
+        self.params = (c_pid_0, c_lamda_slope, c_kapa)
 
         # self.get_mle_objective((c_lamda, c_pid_0, c_lamda_slope, c_kapa))
 
@@ -255,9 +264,9 @@ class Model_1_Weibull(Model):
 
         result = minimize(
             use_method,
-            [c_lamda, c_pid_0, c_lamda_slope, c_kapa],
+            [c_pid_0, c_lamda_slope, c_kapa],
             method="Nelder-Mead",
-            options={"maxiter": 20000},
+            options={"maxiter": 10000},
             tol=1e-8
         )
         self.fit_meta = result
