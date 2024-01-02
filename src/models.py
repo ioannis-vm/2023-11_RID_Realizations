@@ -4,7 +4,6 @@ RID|PID models
 """
 
 import numpy as np
-import pandas as pd
 from scipy.special import erfc
 from scipy.special import erfcinv
 from scipy.optimize import minimize
@@ -12,14 +11,21 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+np.set_printoptions(formatter={'float': '{:0.5f}'.format})
+
 class Model:
     """
     Base Model class.
     """
 
-    def __init__(self, raw_pid, raw_rid):
-        self.raw_pid = raw_pid
-        self.raw_rid = raw_rid
+    def __init__(self):
+
+        self.raw_pid = None
+        self.raw_rid = None
+
+        self.sim_pid = None
+        self.sim_rid = None
+
         self.params = None
         self.fit_status = False
         self.fit_meta = None
@@ -28,7 +34,13 @@ class Model:
         self.rolling_rid_50 = None
         self.rolling_rid_20 = None
         self.rolling_rid_80 = None
+
+    def add_data(self, raw_pid, raw_rid):
+
+        self.raw_pid = raw_pid
+        self.raw_rid = raw_rid
         self.calculate_rolling_quantiles()
+        
 
     def calculate_rolling_quantiles(self):
 
@@ -70,22 +82,6 @@ class Model:
         self.rolling_rid_80 = rolling_rid_80
 
 
-    def plot_data(self, ax=None):
-        """
-        Add a scatter plot of the raw data to a matplotlib axis, or
-        show it if one is not given.
-        """
-        if ax is None:
-            _, ax = plt.subplots()
-        ax.scatter(
-            self.raw_rid,
-            self.raw_pid,
-            s=5.0,
-            color='black'
-        )
-        if ax is None:
-            plt.show()
-
     def fit(self):
         """
         Obtain the parameters by fitting the model to the data
@@ -103,6 +99,36 @@ class Model:
         Evaluate the conditional RID|PID CDF.
         """
         raise NotImplementedError("Subclasses should implement this.")
+
+    def generate_rid_samples(self, pid_samples):
+        """
+        Generates RID samples given PID samples, from the conditional
+        distribution
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def plot_data(self, ax=None, scatter_kwargs=None):
+        """
+        Add a scatter plot of the raw data to a matplotlib axis, or
+        show it if one is not given.
+        """
+
+        if scatter_kwargs == None:
+            scatter_kwargs = {
+                's': 5.0,
+                'color': 'black',
+                'alpha': 0.1
+            }
+        
+        if ax is None:
+            _, ax = plt.subplots()
+        ax.scatter(
+            self.raw_rid,
+            self.raw_pid,
+            **scatter_kwargs
+        )
+        if ax is None:
+            plt.show()
 
     def plot_model(self, ax):
         """
@@ -132,12 +158,14 @@ class Model:
         ax.plot(model_rid_80, model_pid, 'C0', linestyle='dashed')
         ax.grid(which='both', linewidth=0.30)
 
-    def plot_slice(self, ax, pid_min, pid_max):
+    def plot_slice(self, ax, pid_min, pid_max, censoring_limit=None):
 
         mask = (self.raw_pid > pid_min) & (self.raw_pid < pid_max)
         vals = self.raw_rid[mask]
         midpoint = np.mean((pid_min, pid_max))
         sns.ecdfplot(vals, color=f'C0', ax=ax)
+        if censoring_limit:
+            ax.axvline(x=censoring_limit, color='black')
         x = np.linspace(0.00, 0.05, 1000)
         y = self.evaluate_cdf(x, np.array((midpoint,)))
         ax.plot(x, y, color='C1')
@@ -273,73 +301,8 @@ class Model_1_Weibull(Model):
         assert result.success, "Minimization failed."
         self.params = result.x
 
+    def generate_rid_samples(self, pid_samples):
 
-def main():
-    """
-    This is not the right place for this method: will be moved.
-    """
-
-    from src.handle_data import load_dataset
-    from src.handle_data import remove_collapse
-    from src.handle_data import only_drifts
-
-    the_case = ("smrf", "3", "ii", "1", "1")
-    # the_case = ("scbf", "9", "ii", "3", "1")
-    # the_case = ("brbf", "9", "ii", "1", "1")
-
-    df = only_drifts(remove_collapse(load_dataset()[0]))
-    case_df = df[the_case]
-
-    rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
-    pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
-
-    # FEMA P-58
-
-    model = Model_0_P58(pid_vals, rid_vals)
-
-    model.fit(0.007, 0.90)      # values hand-picked for ("smrf", "9", "ii", "1", "1")
-
-    fig, ax = plt.subplots()
-    model.plot_model(ax)
-    ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
-    plt.show()
-
-
-    # Weibull, MLE
-
-    model = Model_1_Weibull(pid_vals, rid_vals)
-
-    model.fit(method='mle')
-
-    fig, ax = plt.subplots()
-    model.plot_model(ax)
-    ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
-    plt.show()
-
-    # plot a slice
-    pid_min = 0.01
-    pid_max = 0.012
-    fig, ax = plt.subplots()
-    model.plot_slice(ax, pid_min, pid_max)
-    plt.show()
-
-    # Weibull, quantile regression
-
-    model = Model_1_Weibull(pid_vals, rid_vals)
-
-    model.fit(method='quantiles')
-
-    fig, ax = plt.subplots()
-    model.plot_model(ax)
-    ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
-    plt.show()
-
-    # plot a slice
-    pid_min = 0.01
-    pid_max = 0.012
-    fig, ax = plt.subplots()
-    model.plot_slice(ax, pid_min, pid_max)
-    plt.show()
+        u = np.random.uniform(0.00, 1.00, len(pid_samples))
+        rid_samples = self.evaluate_inverse_cdf(u, pid_samples)
+        return rid_samples
