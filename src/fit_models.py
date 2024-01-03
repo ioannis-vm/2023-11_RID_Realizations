@@ -11,6 +11,7 @@ from src.models import Model_1_Weibull
 from src.models import Model_1v0_Weibull
 from src.models import Model_1v1_Weibull
 
+
 def main():
     """
     This is not the right place for this method: will be moved.
@@ -95,8 +96,8 @@ def main():
 
     # Confirms:
     # - that the pdf looks the same when plotted in Mathematica
-    rid = np.linspace(0.00, 0.08, 10000)
-    pid = np.linspace(0.00, 0.08, 10000)
+    rid = np.linspace(1e-8, 0.08, 1000)
+    pid = np.linspace(1e-8, 0.08, 1000)
     # pdf_values = model.evaluate_pdf(rid, pid)
     # fig, ax = plt.subplots()
     # ax.plot(rid, pdf_values)
@@ -136,8 +137,8 @@ def main():
     model = Model_1v0_Weibull()
     model.parameters = (0.03, 1.30)
 
-    rid = np.linspace(0.00, 0.08, 10000)
-    pid = np.linspace(0.00, 0.08, 10000)
+    rid = np.linspace(1e-8, 0.08, 1000)
+    pid = np.linspace(1e-8, 0.08, 1000)
 
     rid_samples = model.generate_rid_samples(pid)
 
@@ -166,21 +167,22 @@ def main():
     model = Model_1v1_Weibull()
     model.parameters = (0.30, 1.30) # c_lamda_slope, c_kapa
 
-    rid = np.linspace(0.00, 0.08, 1000)
-    pid = np.linspace(0.00, 0.08, 1000)
+    rid = np.linspace(1e-8, 0.08, 1000)
+    pid = np.linspace(1e-8, 0.08, 1000)
 
     rid_samples = model.generate_rid_samples(pid)
     
     other_model = Model_1v1_Weibull()
     other_model.add_data(pid, rid_samples)
-    other_model.censoring_limit = 0.002
+    other_model.censoring_limit = None
     other_model.fit(method='mle')
     print(other_model.parameters)
     plt.close()
     fig, ax = plt.subplots()
     model.plot_model(ax, rolling=False, training=False, model=True, model_color='C0')
     other_model.plot_model(ax, rolling=False, training=False, model=True, model_color='C1')
-    ax.axvline(x=other_model.censoring_limit, linestyle='dashed', color='black')
+    if other_model.censoring_limit:
+        ax.axvline(x=other_model.censoring_limit, linestyle='dashed', color='black')
     ax.legend(
         [
          Line2D([0], [0], color='C0', lw=1),
@@ -197,8 +199,8 @@ def main():
     model = Model_1_Weibull()
     model.parameters = (0.01, 0.30, 1.30) # c_lamda_slope, c_kapa
 
-    rid = np.linspace(0.00, 0.08, 30)
-    pid = np.linspace(0.00, 0.08, 30)
+    rid = np.linspace(1e-8, 0.08, 1000)
+    pid = np.linspace(1e-8, 0.08, 1000)
 
     rid_samples = model.generate_rid_samples(pid)
     
@@ -227,8 +229,8 @@ def main():
         model = Model_1_Weibull()
         model.parameters = (0.01, 0.30, 1.30) # c_lamda_slope, c_kapa
 
-        rid = np.linspace(0.00, 0.08, 30)
-        pid = np.linspace(0.00, 0.08, 30)
+        rid = np.linspace(1e-8, 0.08, 1000)
+        pid = np.linspace(1e-8, 0.08, 1000)
 
         rid_samples = model.generate_rid_samples(pid)
 
