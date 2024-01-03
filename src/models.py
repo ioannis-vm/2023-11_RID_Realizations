@@ -83,25 +83,25 @@ class Model:
         self.rolling_rid_80 = rolling_rid_80
 
 
-    def fit(self):
+    def fit(self, *args, **kwargs):
         """
         Obtain the parameters by fitting the model to the data
         """
         raise NotImplementedError("Subclasses should implement this.")
 
-    def evaluate_inverse_cdf(self):
+    def evaluate_inverse_cdf(self, *args, **kwargs):
         """
         Evaluate the inverse of the conditional RID|PID CDF.
         """
         raise NotImplementedError("Subclasses should implement this.")
 
-    def evaluate_cdf(self):
+    def evaluate_cdf(self, *args, **kwargs):
         """
         Evaluate the conditional RID|PID CDF.
         """
         raise NotImplementedError("Subclasses should implement this.")
 
-    def generate_rid_samples(self, pid_samples):
+    def generate_rid_samples(self, *args, **kwargs):
         """
         Generates RID samples given PID samples, from the conditional
         distribution
