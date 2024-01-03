@@ -26,7 +26,8 @@ class Model:
         self.sim_pid = None
         self.sim_rid = None
 
-        self.params = None
+        self.censoring_limit = None
+        self.parameters = None
         self.fit_status = False
         self.fit_meta = None
 
@@ -39,8 +40,7 @@ class Model:
 
         self.raw_pid = raw_pid
         self.raw_rid = raw_rid
-        self.calculate_rolling_quantiles()
-        
+
 
     def calculate_rolling_quantiles(self):
 
@@ -130,7 +130,7 @@ class Model:
         if ax is None:
             plt.show()
 
-    def plot_model(self, ax):
+    def plot_model(self, ax, rolling=True, training=True, model=True, model_color='C0'):
         """
         Plot the data in a scatter plot,
         superimpose their empirical quantiles,
@@ -143,20 +143,26 @@ class Model:
         rid_vals = self.raw_rid
         pid_vals = self.raw_pid
 
-        # model_pid = np.linspace(0.00, self.rolling_pid[-1], 1000)
-        model_pid = np.linspace(0.00, 0.08, 1000)
-        model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
-        model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
-        model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
+        if training:
+            self.plot_data(ax)
+        
+        if rolling:
+            self.calculate_rolling_quantiles()
 
-        self.plot_data(ax)
-        ax.plot(self.rolling_rid_50, self.rolling_pid, 'k')
-        ax.plot(self.rolling_rid_20, self.rolling_pid, 'k', linestyle='dashed')
-        ax.plot(self.rolling_rid_80, self.rolling_pid, 'k', linestyle='dashed')
-        ax.plot(model_rid_50, model_pid, 'C0')
-        ax.plot(model_rid_20, model_pid, 'C0', linestyle='dashed')
-        ax.plot(model_rid_80, model_pid, 'C0', linestyle='dashed')
-        ax.grid(which='both', linewidth=0.30)
+            ax.plot(self.rolling_rid_50, self.rolling_pid, 'k')
+            ax.plot(self.rolling_rid_20, self.rolling_pid, 'k', linestyle='dashed')
+            ax.plot(self.rolling_rid_80, self.rolling_pid, 'k', linestyle='dashed')
+
+        if model:
+            # model_pid = np.linspace(0.00, self.rolling_pid[-1], 1000)
+            model_pid = np.linspace(0.00, 0.08, 1000)
+            model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
+            model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
+            model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
+
+            ax.plot(model_rid_50, model_pid, model_color)
+            ax.plot(model_rid_20, model_pid, model_color, linestyle='dashed')
+            ax.plot(model_rid_80, model_pid, model_color, linestyle='dashed')
 
     def plot_slice(self, ax, pid_min, pid_max, censoring_limit=None):
 
@@ -189,13 +195,13 @@ class Model_0_P58(Model):
         The P-58 model requires the user to specify the parameters
         directly.
         """
-        self.params = (delta_y, beta)
+        self.parameters = (delta_y, beta)
 
     def evaluate_inverse_cdf(self, quantile, pid_vals):
         """
         Evaluate the inverse of the conditional RID|PID CDF.
         """
-        delta_y, beta = self.params
+        delta_y, beta = self.parameters
         delta_val = self.delta_fnc(pid_vals, delta_y)
         return delta_val * np.exp(-np.sqrt(2.00) * beta * erfcinv(2.00 * quantile))
 
@@ -203,63 +209,62 @@ class Model_0_P58(Model):
         """
         Evaluate the conditional RID|PID CDF.
         """
-        delta_y, beta = self.params
+        delta_y, beta = self.parameters
         delta_val = self.delta_fnc(pid, delta_y)
         return 0.50 * erfc(-((np.log(rid / delta_val))) / (np.sqrt(2.0) * beta))
 
 
-class Model_1_Weibull(Model):
+class Model_1v0_Weibull(Model):
     """
-    Weibull model
+    Weibull model with two parameters
     """
 
-    def lamda_fnc(self, pid, c_pid_0, c_lamda_slope):
-        c_lamda_0 = 1.0e-8
-        lamda = np.ones_like(pid) * c_lamda_0
-        mask = pid >= c_pid_0
-        lamda[mask] = (pid[mask] - c_pid_0) * c_lamda_slope + c_lamda_0
-        return lamda
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
 
-    def evaluate_pdf(self, rid, pid, c_pid_0, c_lamda_slope, c_kapa, censoring_limit=None):
-        lamda_val = self.lamda_fnc(pid, c_pid_0, c_lamda_slope)
+        c_lamda, c_kapa = self.parameters
+
         pdf_val =  (
-            np.exp(-((rid / lamda_val) ** c_kapa))
+            np.exp(-((rid / c_lamda) ** c_kapa))
             * c_kapa
-            * (rid / lamda_val) ** (c_kapa - 1.00)
-        ) / lamda_val
+            * (rid / c_lamda) ** (c_kapa - 1.00)
+        ) / c_lamda
         if censoring_limit:
-            censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
+            censored_range_mass = self.evaluate_cdf(
+                np.full(len(pid), censoring_limit), pid)
             mask = rid <= censoring_limit
             pdf_val[mask] = censored_range_mass[mask]
         return pdf_val
 
     def evaluate_cdf(self, rid, pid):
-        c_pid_0, c_lamda_slope, c_kapa = self.params
-        lamda_val = self.lamda_fnc(pid, c_pid_0, c_lamda_slope)
-        return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
+        c_lamda, c_kapa = self.parameters
+        return 1.00 - np.exp(-((rid / c_lamda) ** c_kapa))
 
     def evaluate_inverse_cdf(self, q, pid):
-        c_pid_0, c_lamda_slope, c_kapa = self.params
-        lamda_val = self.lamda_fnc(pid, c_pid_0, c_lamda_slope)
-        return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
+        c_lamda, c_kapa = self.parameters
+        return np.full(len(pid), c_lamda) * (-np.log(1.00 - q))**(1.00 / c_kapa)
 
-    def get_mle_objective(self, params):
-        c_pid_0, c_lamda_slope, c_kapa = params
+    def get_mle_objective(self, parameters):
+
+        # update the parameters
+        self.parameters = parameters
+
         density = self.evaluate_pdf(
-            self.raw_rid, self.raw_pid, c_pid_0, c_lamda_slope, c_kapa, 0.002
+            self.raw_rid, self.raw_pid, self.censoring_limit
         )
         weights = np.ones_like(density)
-        mask = (self.raw_pid > 0.002) & (self.raw_pid < 0.015)
-        weights[mask] = 1.0     # no weights
+        # mask = (self.raw_pid > 0.002) & (self.raw_pid < 0.015)
+        # weights[mask] = 1.0     # no weights
         negloglikelihood = -np.sum(np.log(density) * weights)
         return negloglikelihood
 
-    def get_quantile_objective(self, params):
+    def get_quantile_objective(self, parameters):
 
         # update the parameters
-        self.params = params
+        self.parameters = parameters
 
         # calculate the model's RID|PID quantiles
+        if self.rolling_pid is None:
+            self.calculate_rolling_quantiles()
         model_pid = self.rolling_pid
         model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
         model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
@@ -277,13 +282,220 @@ class Model_1_Weibull(Model):
         return loss
 
     def fit(self, method='quantile', **kwargs):
+
+        # Initial values
+        c_lamda = 0.30
+        c_kapa = 1.30
+
+        self.parameters = (c_lamda, c_kapa)
+
+        if method == 'quantiles':
+            use_method = self.get_quantile_objective
+        elif method == 'mle':
+            use_method = self.get_mle_objective
+
+        result = minimize(
+            use_method,
+            [c_lamda, c_kapa],
+            method="Nelder-Mead",
+            options={"maxiter": 10000},
+            tol=1e-8
+        )
+        self.fit_meta = result
+        assert result.success, "Minimization failed."
+        self.parameters = result.x
+
+    def generate_rid_samples(self, pid_samples):
+
+        u = np.random.uniform(0.00, 1.00, len(pid_samples))
+        rid_samples = self.evaluate_inverse_cdf(u, pid_samples)
+        return rid_samples
+
+
+class Model_1v1_Weibull(Model):
+    """
+    Weibull model with linear lambda function
+    """
+
+    def lamda_fnc(self, pid):
+        c_lamda_slope, _ = self.parameters
+        lamda = pid * c_lamda_slope
+        return lamda
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        _, c_kapa = self.parameters
+        lamda_val = self.lamda_fnc(pid)
+        pdf_val = (
+            np.exp(-((rid / lamda_val) ** c_kapa))
+            * c_kapa
+            * (rid / lamda_val) ** (c_kapa - 1.00)
+        ) / lamda_val
+        if censoring_limit:
+            censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
+            mask = rid <= censoring_limit
+            pdf_val[mask] = censored_range_mass[mask]
+        return pdf_val
+
+    def evaluate_cdf(self, rid, pid):
+        _, c_kapa = self.parameters
+        lamda_val = self.lamda_fnc(pid)
+        return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
+
+    def evaluate_inverse_cdf(self, q, pid):
+        c_lamda_slope, c_kapa = self.parameters
+        lamda_val = self.lamda_fnc(pid)
+        return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
+
+    def get_mle_objective(self, parameters):
+
+        # update the parameters
+        self.parameters = parameters
+        density = self.evaluate_pdf(
+            self.raw_rid, self.raw_pid, self.censoring_limit
+        )
+        weights = np.ones_like(density)
+        # mask = (self.raw_pid > 0.002) & (self.raw_pid < 0.015)
+        # weights[mask] = 1.0     # no weights
+        negloglikelihood = -np.sum(np.log(density) * weights)
+        return negloglikelihood
+
+    def get_quantile_objective(self, parameters):
+
+        # update the parameters
+        self.parameters = parameters
+
+        # calculate the model's RID|PID quantiles
+        if self.rolling_pid is None:
+            self.calculate_rolling_quantiles()
+        model_pid = self.rolling_pid
+        model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
+        model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
+        model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
+
+        loss = (
+            (self.rolling_rid_50 - model_rid_50).T
+            @ (self.rolling_rid_50 - model_rid_50)
+            + (self.rolling_rid_20 - model_rid_20).T
+            @ (self.rolling_rid_20 - model_rid_20)
+            + (self.rolling_rid_80 - model_rid_80).T
+            @ (self.rolling_rid_80 - model_rid_80)
+        )
+
+        return loss
+
+    def fit(self, method='quantile', **kwargs):
+
+        # Initial values
+        c_lamda_slope = 0.30
+        c_kapa = 1.30
+
+        self.parameters = (c_lamda_slope, c_kapa)
+
+        if method == 'quantiles':
+            use_method = self.get_quantile_objective
+        elif method == 'mle':
+            use_method = self.get_mle_objective
+
+        result = minimize(
+            use_method,
+            [c_lamda_slope, c_kapa],
+            method="Nelder-Mead",
+            options={"maxiter": 10000},
+            tol=1e-8
+        )
+        self.fit_meta = result
+        assert result.success, "Minimization failed."
+        self.parameters = result.x
+
+    def generate_rid_samples(self, pid_samples):
+
+        u = np.random.uniform(0.00, 1.00, len(pid_samples))
+        rid_samples = self.evaluate_inverse_cdf(u, pid_samples)
+        return rid_samples
+
+
+class Model_1_Weibull(Model):
+    """
+    Weibull model
+    """
+
+    def lamda_fnc(self, pid):
+        c_pid_0, c_lamda_slope, _ = self.parameters
+        c_lamda_0 = 1.0e-8
+        lamda = np.ones_like(pid) * c_lamda_0
+        mask = pid >= c_pid_0
+        lamda[mask] = (pid[mask] - c_pid_0) * c_lamda_slope + c_lamda_0
+        return lamda
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        _, _, c_kapa = self.parameters
+        lamda_val = self.lamda_fnc(pid)
+        pdf_val = (
+            np.exp(-((rid / lamda_val) ** c_kapa))
+            * c_kapa
+            * (rid / lamda_val) ** (c_kapa - 1.00)
+        ) / lamda_val
+        if censoring_limit:
+            censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
+            mask = rid <= censoring_limit
+            pdf_val[mask] = censored_range_mass[mask]
+        return pdf_val
+
+    def evaluate_cdf(self, rid, pid):
+        _, _, c_kapa = self.parameters
+        lamda_val = self.lamda_fnc(pid)
+        return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
+
+    def evaluate_inverse_cdf(self, q, pid):
+        c_pid_0, c_lamda_slope, c_kapa = self.parameters
+        lamda_val = self.lamda_fnc(pid)
+        return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
+
+    def get_mle_objective(self, parameters):
+
+        # update the parameters
+        self.parameters = parameters
+        density = self.evaluate_pdf(
+            self.raw_rid, self.raw_pid, self.censoring_limit
+        )
+        weights = np.ones_like(density)
+        # mask = (self.raw_pid > 0.002) & (self.raw_pid < 0.015)
+        # weights[mask] = 1.0     # no weights
+        negloglikelihood = -np.sum(np.log(density) * weights)
+        return negloglikelihood
+
+    def get_quantile_objective(self, parameters):
+
+        # update the parameters
+        self.parameters = parameters
+
+        # calculate the model's RID|PID quantiles
+        if self.rolling_pid is None:
+            self.calculate_rolling_quantiles()
+        model_pid = self.rolling_pid
+        model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
+        model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
+        model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
+
+        loss = (
+            (self.rolling_rid_50 - model_rid_50).T
+            @ (self.rolling_rid_50 - model_rid_50)
+            + (self.rolling_rid_20 - model_rid_20).T
+            @ (self.rolling_rid_20 - model_rid_20)
+            + (self.rolling_rid_80 - model_rid_80).T
+            @ (self.rolling_rid_80 - model_rid_80)
+        )
+
+        return loss
+
+    def fit(self, method='quantile', **kwargs):
+
+        # Initial values
         c_pid_0 = 0.008
         c_lamda_slope = 0.30
         c_kapa = 1.30
 
-        self.params = (c_pid_0, c_lamda_slope, c_kapa)
-
-        # self.get_mle_objective((c_lamda, c_pid_0, c_lamda_slope, c_kapa))
+        self.parameters = (c_pid_0, c_lamda_slope, c_kapa)
 
         if method == 'quantiles':
             use_method = self.get_quantile_objective
@@ -299,7 +511,7 @@ class Model_1_Weibull(Model):
         )
         self.fit_meta = result
         assert result.success, "Minimization failed."
-        self.params = result.x
+        self.parameters = result.x
 
     def generate_rid_samples(self, pid_samples):
 
