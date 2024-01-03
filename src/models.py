@@ -4,6 +4,7 @@ RID|PID models
 """
 
 import numpy as np
+import scipy as sp
 from scipy.special import erfc
 from scipy.special import erfcinv
 from scipy.optimize import minimize
@@ -223,11 +224,12 @@ class Model_1v0_Weibull(Model):
 
         c_lamda, c_kapa = self.parameters
 
-        pdf_val =  (
-            np.exp(-((rid / c_lamda) ** c_kapa))
-            * c_kapa
-            * (rid / c_lamda) ** (c_kapa - 1.00)
-        ) / c_lamda
+        pdf_val = sp.stats.weibull_min.pdf(rid, c_kapa, 0.00, c_lamda)
+        # pdf_val =  (
+        #     np.exp(-((rid / c_lamda) ** c_kapa))
+        #     * c_kapa
+        #     * (rid / c_lamda) ** (c_kapa - 1.00)
+        # ) / c_lamda
         if censoring_limit:
             censored_range_mass = self.evaluate_cdf(
                 np.full(len(pid), censoring_limit), pid)
@@ -237,11 +239,15 @@ class Model_1v0_Weibull(Model):
 
     def evaluate_cdf(self, rid, pid):
         c_lamda, c_kapa = self.parameters
-        return 1.00 - np.exp(-((rid / c_lamda) ** c_kapa))
+        # return 1.00 - np.exp(-((rid / c_lamda) ** c_kapa))
+        return sp.stats.weibull_min.cdf(rid, c_kapa, 0.00, c_lamda)
 
     def evaluate_inverse_cdf(self, q, pid):
         c_lamda, c_kapa = self.parameters
-        return np.full(len(pid), c_lamda) * (-np.log(1.00 - q))**(1.00 / c_kapa)
+        lamda = np.full(len(pid), c_lamda)
+        kapa = np.full(len(pid), c_kapa)
+        # return np.full(len(pid), c_lamda) * (-np.log(1.00 - q))**(1.00 / c_kapa)
+        return sp.stats.weibull_min.ppf(q, kapa, 0.00, lamda)
 
     def get_mle_objective(self, parameters):
 
@@ -325,11 +331,12 @@ class Model_1v1_Weibull(Model):
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
         _, c_kapa = self.parameters
         lamda_val = self.lamda_fnc(pid)
-        pdf_val = (
-            np.exp(-((rid / lamda_val) ** c_kapa))
-            * c_kapa
-            * (rid / lamda_val) ** (c_kapa - 1.00)
-        ) / lamda_val
+        # pdf_val = (
+        #     np.exp(-((rid / lamda_val) ** c_kapa))
+        #     * c_kapa
+        #     * (rid / lamda_val) ** (c_kapa - 1.00)
+        # ) / lamda_val
+        pdf_val = sp.stats.weibull_min.pdf(rid, c_kapa, 0.00, lamda_val)
         if censoring_limit:
             censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
             mask = rid <= censoring_limit
@@ -339,12 +346,15 @@ class Model_1v1_Weibull(Model):
     def evaluate_cdf(self, rid, pid):
         _, c_kapa = self.parameters
         lamda_val = self.lamda_fnc(pid)
-        return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
+        # return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
+        return sp.stats.weibull_min.cdf(rid, c_kapa, 0.00, lamda_val)
 
     def evaluate_inverse_cdf(self, q, pid):
-        c_lamda_slope, c_kapa = self.parameters
+        _, c_kapa = self.parameters
         lamda_val = self.lamda_fnc(pid)
-        return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
+        # return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
+        return sp.stats.weibull_min.ppf(q, c_kapa, 0.00, lamda_val)
+
 
     def get_mle_objective(self, parameters):
 
@@ -430,11 +440,12 @@ class Model_1_Weibull(Model):
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
         _, _, c_kapa = self.parameters
         lamda_val = self.lamda_fnc(pid)
-        pdf_val = (
-            np.exp(-((rid / lamda_val) ** c_kapa))
-            * c_kapa
-            * (rid / lamda_val) ** (c_kapa - 1.00)
-        ) / lamda_val
+        pdf_val = sp.stats.weibull_min.pdf(rid, c_kapa, 0.00, lamda_val)
+        # pdf_val = (
+        #     np.exp(-((rid / lamda_val) ** c_kapa))
+        #     * c_kapa
+        #     * (rid / lamda_val) ** (c_kapa - 1.00)
+        # ) / lamda_val
         if censoring_limit:
             censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
             mask = rid <= censoring_limit
@@ -444,12 +455,14 @@ class Model_1_Weibull(Model):
     def evaluate_cdf(self, rid, pid):
         _, _, c_kapa = self.parameters
         lamda_val = self.lamda_fnc(pid)
-        return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
-
+        # return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
+        return sp.stats.weibull_min.cdf(rid, c_kapa, 0.00, lamda_val)
+    
     def evaluate_inverse_cdf(self, q, pid):
         c_pid_0, c_lamda_slope, c_kapa = self.parameters
         lamda_val = self.lamda_fnc(pid)
-        return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
+        # return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
+        return sp.stats.weibull_min.ppf(q, c_kapa, 0.00, lamda_val)
 
     def get_mle_objective(self, parameters):
 
