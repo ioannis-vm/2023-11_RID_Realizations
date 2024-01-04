@@ -1,5 +1,8 @@
 * RID Project Activity Log
 Note that the log is in reverse order (newer entries appear at the top)
+**** [2024-01-04 Thu 13:14]
+Fitted the bilinear Weibull model to all results. Introduced reasonable bounds to the parameters based on the results obtained without bounds.
+Configured the MLE implementation to overcome cases where the optimization failed by replacing zero likelihoods with a small value and reducing the tolerance.
 **** [2024-01-04 Thu 10:15]
 I did some housekeeping work (refactoring, checker configurations, linting)
 **** [2024-01-04 Thu 07:33]
