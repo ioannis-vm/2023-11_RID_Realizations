@@ -11,3 +11,4 @@ yapf
 black
 black-macchiato
 tqdm
+gitpython
