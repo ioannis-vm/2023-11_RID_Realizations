@@ -1,0 +1,10 @@
+* RID Project Activity Log
+Note that the log is in reverse order (newer entries appear at the top)
+**** [2024-01-04 Thu 07:12]
+So far we have investigated potential candidates for the RID|PID distribution.
+Weibull is an appropriate choice, and we will also examine a few others.
+After some experimentation by slicing the PID-RID data of a single case and fitting to the slices, we have observed that a piecewise bilinear function for the scale parameter (~lambda~) given PID, and a constant shape parameter, (~kappa~), fit quite well to the data.
+All realized RIDs in our data are not large enough to give offer any insight on the appropriate slope of a third line for a trilinear model, like the one defined in FEMA P-58. Combined with our goal for simplicity (few parameters to fit), we stay with the bilinear assumption.
+We have had some issues with MLE not performing as well as expected, which appear to have been resolved with the ~e8fcd71~ commit.
+**** [2024-01-04 Thu 07:10]
+I am initializing this activity log to keep track of what I am doing here on this project for future reference.
