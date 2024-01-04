@@ -240,6 +240,7 @@ class Model_1_Weibull(Model):
         #     * c_kapa
         #     * (rid / lamda_val) ** (c_kapa - 1.00)
         # ) / lamda_val
+        pdf_val[pdf_val < 1e-6] = 1e-6
         if censoring_limit:
             censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
             mask = rid <= censoring_limit
@@ -312,9 +313,10 @@ class Model_1_Weibull(Model):
         result = minimize(
             use_method,
             [c_pid_0, c_lamda_slope, c_kapa],
+            bounds=((0.00, 0.02), (0.00, 1.00), (0.80, 2.00)),
             method="Nelder-Mead",
             options={"maxiter": 10000},
-            tol=1e-8
+            tol=1e-6
         )
         self.fit_meta = result
         assert result.success, "Minimization failed."
