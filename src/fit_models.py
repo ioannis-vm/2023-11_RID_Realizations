@@ -30,7 +30,7 @@ def get_all_cases():
     return cases
 
 
-def obtain_weibul_parameters():
+def obtain_weibull_parameters():
 
     df = only_drifts(remove_collapse(load_dataset()[0]))
 
@@ -60,7 +60,7 @@ def obtain_weibul_parameters():
     )
     res['loglikelihood'] = loglikelihood
     res.sort_index(inplace=True)
-    res.to_parquet(store_info('results/parameters/weibul_bilinear/parameters.parquet', ['data/edp.parquet']))
+    res.to_parquet(store_info('results/parameters/weibull_bilinear/parameters.parquet', ['data/edp.parquet']))
 
 
 def main():
