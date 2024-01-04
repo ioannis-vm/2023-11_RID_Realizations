@@ -28,11 +28,11 @@ ignore-paths=
 
 # Files or directories matching the regex patterns are skipped. The regex
 # matches against base names, not paths.
-ignore-patterns=
+ignore-patterns=flycheck
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-init-hook='import sys; sys.path.append("."); print(f"Python: {sys.executable}")'
+init-hook='import sys; sys.path.extend([".", "../", "../../"]); print(f"Python: {sys.executable}")'
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use.
@@ -91,7 +91,8 @@ disable=raw-checker-failed,
 		invalid-name,
 		invalid-unary-operand-type,
 		redefined-outer-name,
-		singleton-comparison
+		singleton-comparison,
+		missing-function-docstring
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
