@@ -36,4 +36,4 @@ We use the following directory structure: `results/{result-category}/{method}/{r
 
 This section will describe in what order to execute the code to reproduce all of the project's analysis results.
 Currently all code is merely exploratory.
-g
+
