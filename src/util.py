@@ -4,12 +4,12 @@ Utility functions for the project
 
 import os
 import sys
+import socket
 from datetime import datetime
+from importlib.metadata import distributions
 import shutil
 import hashlib
 import git
-from importlib.metadata import distributions
-import socket
 
 
 def calculate_input_file_info(file_list):
@@ -25,7 +25,7 @@ def calculate_input_file_info(file_list):
         # Calculate individual file SHA256 checksum
         hash_sha256 = hashlib.sha256()
         with open(file_name, 'rb') as file:
-            for byte_block in iter(lambda: file.read(4096), b""):
+            for byte_block in iter(lambda: file.read(4096), b""): # pylint:disable=cell-var-from-loop
                 hash_sha256.update(byte_block)
 
         file_checksum = hash_sha256.hexdigest()
