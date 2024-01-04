@@ -26,18 +26,18 @@ We use the following directory structure: `results/{result-category}/{method}/{r
 `{result-filename}` is the file name for a type of result, and it can be the same for different methods.  
 
 
-`doc/` contains the files used to generate documents associated with the project, such as the poster presentation, manuscripts and any other derivative work. It also contaings an activity log.
+`doc/` contains the files used to generate documents associated with the project, such as the poster presentation, manuscripts and any other derivative work. It also contains an activity log.
 
 ## Data version control
 
 `results` is not version controlled, but the contents are tracked with [DVC](https://dvc.org/).
 
-After cloing the repository and setting up the environment, issue the following command to pull the results:
+After cloning the repository and setting up the environment, issue the following command to pull the results:
 ```
 dvc pull
 ```
 
-After making changes to the results, they should be added with DVC and then commited with git.
+After making changes to the results, they should be added with DVC and then committed with git.
 ```
 dvc add results
 git add {changed-dvc-files}
