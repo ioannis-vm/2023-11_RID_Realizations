@@ -1,5 +1,11 @@
 * RID Project Activity Log
 Note that the log is in reverse order (newer entries appear at the top)
+**** [2024-01-04 Thu 07:33]
+With branch =exp_1=, I experimented with an alternative assumption for the median RID | PID.
+I used a power function of the form ax**b to see if it would be a better fit than the piecewise bilinear.
+When fitted on all rolling quantiles that can be obtained from the data, the two approaches have about the same residual loss.
+We should therefore keep the piecewise bilinear, since it is more intuitive for the kind of data we are fitting and its parameters can have more interpretable bounds.
+
 **** [2024-01-04 Thu 07:12]
 So far we have investigated potential candidates for the RID|PID distribution.
 Weibull is an appropriate choice, and we will also examine a few others.
