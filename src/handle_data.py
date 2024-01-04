@@ -2,7 +2,6 @@
 Functions to process the input data
 """
 
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -43,7 +42,7 @@ def remove_collapse(df):
 
     # globally remove cmp-loc-dir entries that correspond to a
     # collapse
-    pid_df = (df_unstack['PID'] > drift_threshold)
+    pid_df = df_unstack['PID'] > drift_threshold
     not_collapse_bool_index = ~pid_df.apply(any, axis=1)
 
     df_unstack_no_collapse = (
@@ -93,7 +92,7 @@ def scatter_pid_rid(filtered_df):
 
     # archetype_df = archetype_df.stack(0).stack(0).stack(0).stack(0).stack(0)
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     sns.scatterplot(
         data=archetype_df,
         x="RID",
