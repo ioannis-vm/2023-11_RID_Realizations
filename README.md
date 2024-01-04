@@ -32,6 +32,18 @@ We use the following directory structure: `results/{result-category}/{method}/{r
 
 `results` is not version controlled, but the contents are tracked with [DVC](https://dvc.org/).
 
+After cloing the repository and setting up the environment, issue the following command to pull the results:
+```
+dvc pull
+```
+
+After making changes to the results, they should be added with DVC and then commited with git.
+```
+dvc add results
+git add {changed-dvc-files}
+git commit -m 'DVC - update results'
+```
+
 ## Data processing pipeline
 
 This section will describe in what order to execute the code to reproduce all of the project's analysis results.
