@@ -1,5 +1,7 @@
 * RID Project Activity Log
 Note that the log is in reverse order (newer entries appear at the top)
+**** [2024-01-04 Thu 10:15]
+I did some housekeeping work (refactoring, checker configurations, linting)
 **** [2024-01-04 Thu 07:33]
 With branch =exp_1=, I experimented with an alternative assumption for the median RID | PID.
 I used a power function of the form ax**b to see if it would be a better fit than the piecewise bilinear.
@@ -10,7 +12,7 @@ We should therefore keep the piecewise bilinear, since it is more intuitive for 
 So far we have investigated potential candidates for the RID|PID distribution.
 Weibull is an appropriate choice, and we will also examine a few others.
 After some experimentation by slicing the PID-RID data of a single case and fitting to the slices, we have observed that a piecewise bilinear function for the scale parameter (~lambda~) given PID, and a constant shape parameter, (~kappa~), fit quite well to the data.
-All realized RIDs in our data are not large enough to give offer any insight on the appropriate slope of a third line for a trilinear model, like the one defined in FEMA P-58. Combined with our goal for simplicity (few parameters to fit), we stay with the bilinear assumption.
+All realized RIDs in our data are not large enough to offer any insight on the appropriate slope of a third line for a trilinear model, like the one defined in FEMA P-58. Combined with our goal for simplicity (few parameters to fit), we stay with the bilinear assumption.
 We have had some issues with MLE not performing as well as expected, which appear to have been resolved with the ~e8fcd71~ commit.
 **** [2024-01-04 Thu 07:10]
 I am initializing this activity log to keep track of what I am doing here on this project for future reference.
