@@ -12,3 +12,5 @@ black
 black-macchiato
 tqdm
 gitpython
+dvc
+
