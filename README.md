@@ -48,5 +48,14 @@ git commit -m 'DVC - update results'
 ## Data processing pipeline
 
 This section will describe in what order to execute the code to reproduce all of the project's analysis results.
-Currently all code is merely exploratory.
+Note that the results should already be available using DVC.
 
+1. Fit all the models. Creates `parameters.parquet` and `models.picle` files in `results/parameters/{method}/`.
+```
+python src/fit_models.py
+```
+
+2. Create plots that help assess the quality of the fit. Creates `fit_{system}_{stories}_{rc}.pdf` files in `results/figures/{method}/`.
+```
+python src/plot_fit.py
+```
