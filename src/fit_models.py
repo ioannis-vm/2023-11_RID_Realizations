@@ -2,6 +2,7 @@
 Fit all models to the data and store the parameters.
 """
 
+import pickle
 import pandas as pd
 from itertools import product
 import tqdm
@@ -35,6 +36,8 @@ def obtain_weibull_parameters():
     parameters = []
     loglikelihood = []
 
+    models = {}
+
     for the_case in tqdm.tqdm(cases):
         case_df = df[the_case].dropna()
         rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
@@ -46,6 +49,7 @@ def obtain_weibull_parameters():
         model.fit(method='mle')
         loglikelihood.append(-model.fit_meta.fun)
         parameters.append(model.parameters)
+        models[the_case] = model
 
     res = pd.DataFrame(
         parameters,
@@ -62,6 +66,14 @@ def obtain_weibull_parameters():
             ['data/edp.parquet'],
         )
     )
+    with open(
+        store_info(
+            'results/parameters/weibull_bilinear/models.pickle',
+            ['data/edp.parquet'],
+        ),
+        'wb'
+    ) as f:
+        pickle.dump(models, f)
 
 
 def main():
