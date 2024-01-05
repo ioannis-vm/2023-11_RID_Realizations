@@ -40,6 +40,7 @@ dvc pull
 After making changes to the results, they should be added with DVC and then committed with git.
 ```
 dvc add results
+dvc push
 git add {changed-dvc-files}
 git commit -m 'DVC - update results'
 ```
