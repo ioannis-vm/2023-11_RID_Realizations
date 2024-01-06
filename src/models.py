@@ -17,13 +17,41 @@ import seaborn as sns
 
 np.set_printoptions(formatter={'float': '{:0.5f}'.format})
 
+
+def lognormal_fragility_weight(rid, delta=0.01, beta=0.30):
+    """
+    Determine MLE weights based on the RID value, considering the
+    lognormal residual drift fragility curve for which the generated
+    RIDs will be the input. delta is the median and beta the
+    dispersion of the fragility curve.  We use the shape of its
+    density function, scaled to a maximum weight, and shifted in the Y
+    axis to have a weight of 1 far away from the median.
+    """
+    max_scaling = 5.00
+
+    # scaling_factors = (max_scaling - 1.00) * (
+    #     delta
+    #     / (np.exp((beta**4 + np.log(rid / delta) ** 2) / (2 * beta**2)) * rid)
+    # ) + 1.00
+
+    exponent = (beta**4 + np.log(rid / delta) ** 2) / (2 * beta**2)
+    scaling_factors = np.empty_like(rid)
+    # 700 is a rough threshold to avoid overflow in exp
+    #   In this case the function evaluates to 1.00
+    scaling_factors[exponent > 700.00] = 1.00
+    scaling_factors[exponent <= 700.00] = (max_scaling - 1.00) * (
+        delta / (np.exp(exponent[exponent <= 700.00]) * rid[exponent <= 700.00])
+    ) + 1.00
+
+    return scaling_factors
+
+
 class Model:
     """
     Base Model class.
     """
 
     def __init__(self):
-
         self.raw_pid = None
         self.raw_rid = None
 
@@ -41,13 +69,10 @@ class Model:
         self.rolling_rid_80 = None
 
     def add_data(self, raw_pid, raw_rid):
-
         self.raw_pid = raw_pid
         self.raw_rid = raw_rid
 
-
     def calculate_rolling_quantiles(self):
-
         # calculate rolling empirical RID|PID quantiles
         idsort = np.argsort(self.raw_pid)
         num_vals = len(self.raw_pid)
@@ -85,7 +110,6 @@ class Model:
         self.rolling_rid_20 = rolling_rid_20
         self.rolling_rid_80 = rolling_rid_80
 
-
     def fit(self, *args, **kwargs):
         """
         Obtain the parameters by fitting the model to the data
@@ -117,24 +141,23 @@ class Model:
         show it if one is not given.
         """
 
-        if scatter_kwargs == None:
+        if scatter_kwargs is None:
             scatter_kwargs = {
                 's': 5.0,
-                'color': 'black',
-                'alpha': 0.1
+                'facecolor': 'none',
+                'edgecolor': 'black',
+                'alpha': 0.2,
             }
 
         if ax is None:
             _, ax = plt.subplots()
-        ax.scatter(
-            self.raw_rid,
-            self.raw_pid,
-            **scatter_kwargs
-        )
+        ax.scatter(self.raw_rid, self.raw_pid, **scatter_kwargs)
         if ax is None:
             plt.show()
 
-    def plot_model(self, ax, rolling=True, training=True, model=True, model_color='C0'):
+    def plot_model(
+        self, ax, rolling=True, training=True, model=True, model_color='C0'
+    ):
         """
         Plot the data in a scatter plot,
         superimpose their empirical quantiles,
@@ -166,7 +189,6 @@ class Model:
             ax.plot(model_rid_80, model_pid, model_color, linestyle='dashed')
 
     def plot_slice(self, ax, pid_min, pid_max, censoring_limit=None):
-
         mask = (self.raw_pid > pid_min) & (self.raw_pid < pid_max)
         vals = self.raw_rid[mask]
         midpoint = np.mean((pid_min, pid_max))
@@ -191,7 +213,7 @@ class Model_0_P58(Model):
         delta[mask] = pid[mask] - 3.00 * delta_y
         return delta
 
-    def fit(self, *args, delta_y=0.00, beta=0.00 , **kwargs):
+    def fit(self, *args, delta_y=0.00, beta=0.00, **kwargs):
         """
         The P-58 model requires the user to specify the parameters
         directly.
@@ -242,7 +264,9 @@ class Model_1_Weibull(Model):
         # ) / lamda_val
         pdf_val[pdf_val < 1e-6] = 1e-6
         if censoring_limit:
-            censored_range_mass = self.evaluate_cdf(np.full(len(pid), censoring_limit), pid)
+            censored_range_mass = self.evaluate_cdf(
+                np.full(len(pid), censoring_limit), pid
+            )
             mask = rid <= censoring_limit
             pdf_val[mask] = censored_range_mass[mask]
         return pdf_val
@@ -260,20 +284,14 @@ class Model_1_Weibull(Model):
         return sp.stats.weibull_min.ppf(quantile, c_kapa, 0.00, lamda_val)
 
     def get_mle_objective(self, parameters):
-
         # update the parameters
         self.parameters = parameters
-        density = self.evaluate_pdf(
-            self.raw_rid, self.raw_pid, self.censoring_limit
-        )
-        weights = np.ones_like(density)
-        # mask = (self.raw_pid > 0.002) & (self.raw_pid < 0.015)
-        # weights[mask] = 1.0     # no weights
-        negloglikelihood = -np.sum(np.log(density) * weights)
+        density = self.evaluate_pdf(self.raw_rid, self.raw_pid, self.censoring_limit)
+        weights = lognormal_fragility_weight(self.raw_rid)
+        negloglikelihood = -np.sum(weights * np.log(density))
         return negloglikelihood
 
     def get_quantile_objective(self, parameters):
-
         # update the parameters
         self.parameters = parameters
 
@@ -297,7 +315,6 @@ class Model_1_Weibull(Model):
         return loss
 
     def fit(self, *args, method='quantile', **kwargs):
-
         # Initial values
         c_pid_0 = 0.008
         c_lamda_slope = 0.30
@@ -313,17 +330,16 @@ class Model_1_Weibull(Model):
         result = minimize(
             use_method,
             [c_pid_0, c_lamda_slope, c_kapa],
-            bounds=((0.00, 0.02), (0.00, 1.00), (0.80, 2.00)),
+            bounds=((0.00, 0.02), (0.00, 1.00), (0.80, 4.00)),
             method="Nelder-Mead",
             options={"maxiter": 10000},
-            tol=1e-6
+            tol=1e-6,
         )
         self.fit_meta = result
         assert result.success, "Minimization failed."
         self.parameters = result.x
 
     def generate_rid_samples(self, pid_samples):
-
         u = np.random.uniform(0.00, 1.00, len(pid_samples))
         rid_samples = self.evaluate_inverse_cdf(u, pid_samples)
         return rid_samples
