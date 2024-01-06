@@ -11,6 +11,8 @@ import shutil
 import hashlib
 import git
 
+# pylint:disable=cell-var-from-loop
+
 
 def calculate_input_file_info(file_list):
     """
@@ -21,18 +23,20 @@ def calculate_input_file_info(file_list):
     file_info_strings = []
 
     for file_name in file_list:
-
         # Calculate individual file SHA256 checksum
         hash_sha256 = hashlib.sha256()
         with open(file_name, 'rb') as file:
-            for byte_block in iter(lambda: file.read(4096), b""): # pylint:disable=cell-var-from-loop
+            for byte_block in iter(
+                lambda: file.read(4096), b""
+            ):  # pylint:disable=cell-var-from-loop
                 hash_sha256.update(byte_block)
 
         file_checksum = hash_sha256.hexdigest()
         # Get last modified time and size of the file
         file_stats = os.stat(file_name)
-        last_modified_date = datetime.fromtimestamp(
-            file_stats.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+        last_modified_date = datetime.fromtimestamp(file_stats.st_mtime).strftime(
+            '%Y-%m-%d %H:%M:%S'
+        )
         file_size = file_stats.st_size
 
         # Convert size to a human-friendly format
@@ -40,15 +44,17 @@ def calculate_input_file_info(file_list):
         human_size = file_size
         i = 0
         while human_size >= 1024 and i < len(suffixes) - 1:
-            human_size /= 1024.
+            human_size /= 1024.0
             i += 1
         file_size_human = f"{human_size:.2f} {suffixes[i]}"
 
         # Combine information into a string for each file
-        file_info = f"    File: {os.path.basename(file_name)}\n" \
-                    f"    Checksum: {file_checksum}\n" \
-                    f"    Last Modified: {last_modified_date}\n" \
-                    f"    Size: {file_size_human}\n"
+        file_info = (
+            f"    File: {os.path.basename(file_name)}\n"
+            f"    Checksum: {file_checksum}\n"
+            f"    Last Modified: {last_modified_date}\n"
+            f"    Size: {file_size_human}\n"
+        )
         file_info_strings.append(file_info)
 
     return "\n".join(file_info_strings)
@@ -66,7 +72,8 @@ def store_info(path, input_data_paths=None, seeds=None):
     if os.path.isfile(path):
         timestamp_for_backup = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_folder = os.path.join(
-            os.path.dirname(path), 'replaced_on_' + timestamp_for_backup)
+            os.path.dirname(path), 'replaced_on_' + timestamp_for_backup
+        )
         os.makedirs(backup_folder, exist_ok=True)
         shutil.move(path, backup_folder)
         metadata_content += f'Moved existing {path} in {backup_folder}\n'

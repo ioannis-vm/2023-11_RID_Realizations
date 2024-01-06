@@ -6,7 +6,6 @@ data for all considered archetypes.
 from itertools import product
 import pickle
 import tqdm
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from src.util import store_info
@@ -14,11 +13,11 @@ from src.util import store_info
 
 def generate_figure(system, stories, rc, model_df, method, models_path):
     """
-      Generate a figure showing the PID-RID pairs, their rolling
-      quantiles and the fitted model's quantiles.  The figure is laid
-      out in groups of two columns (x-dir, y-dir) and three rows
-      (three stories). Taller archetypes (6-story, 9-story) contain
-      additional groups on the right of the previous one.
+    Generate a figure showing the PID-RID pairs, their rolling
+    quantiles and the fitted model's quantiles.  The figure is laid
+    out in groups of two columns (x-dir, y-dir) and three rows
+    (three stories). Taller archetypes (6-story, 9-story) contain
+    additional groups on the right of the previous one.
 
     """
 
@@ -104,11 +103,9 @@ def main():
     model_df = pd.Series(models.values(), index=models.keys())
     model_df.index.names = ('system', 'stories', 'rc', 'loc', 'dir')
 
-    for system, stories, rc in tqdm.tqdm(list(product(
-        ('smrf', 'scbf', 'brbf'),
-        ('3', '6', '9'),
-        ('ii', 'iv')
-    ))):
+    for system, stories, rc in tqdm.tqdm(
+        list(product(('smrf', 'scbf', 'brbf'), ('3', '6', '9'), ('ii', 'iv')))
+    ):
         generate_figure(system, stories, rc, model_df, method, models_path)
 
 

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 def load_dataset():
     """
-      Load the analysis results and their units.
+    Load the analysis results and their units.
     """
     df = pd.read_parquet('data/edp.parquet')
 
@@ -17,22 +17,17 @@ def load_dataset():
     # (was stored as DataFrame to use df.to_parquet())
     df = df['value']
 
-    units = {
-        'PFA': 'g',
-        'PID': 'rad',
-        'PFV': 'in/s',
-        'PVb': 'lb'
-    }
+    units = {'PFA': 'g', 'PID': 'rad', 'PFV': 'in/s', 'PVb': 'lb'}
 
     return df, units
 
 
 def remove_collapse(df):
     """
-      Remove collapse instances
+    Remove collapse instances
     """
 
-    drift_threshold = 0.08      # that's 8%
+    drift_threshold = 0.08  # that's 8%
 
     initial_level_order = df.index.names
 
@@ -45,18 +40,20 @@ def remove_collapse(df):
     pid_df = df_unstack['PID'] > drift_threshold
     not_collapse_bool_index = ~pid_df.apply(any, axis=1)
 
-    df_unstack_no_collapse = (
-        df_unstack.loc[not_collapse_bool_index, :])
-    df_unstack = (df.unstack()
-        .unstack(0).unstack(0)
-        .unstack(0).unstack(0)
-        .reorder_levels(
-            ('system', 'stories', 'rc', 'hz', 'gm'), axis=1)
-        )
+    df_unstack_no_collapse = df_unstack.loc[not_collapse_bool_index, :]
+    df_unstack = (
+        df.unstack()
+        .unstack(0)
+        .unstack(0)
+        .unstack(0)
+        .unstack(0)
+        .reorder_levels(('system', 'stories', 'rc', 'hz', 'gm'), axis=1)
+    )
 
     df_no_collapse = (
-        df_unstack_no_collapse
-        .stack().stack().stack()
+        df_unstack_no_collapse.stack()
+        .stack()
+        .stack()
         .reorder_levels(initial_level_order)
     )
 
@@ -64,12 +61,10 @@ def remove_collapse(df):
 
 
 def only_drifts(df_no_collapse):
-
     filtered_df = (
         df_no_collapse[
-            df_no_collapse.index
-            .get_level_values('edp')
-            .isin(("PID", "RID"))]
+            df_no_collapse.index.get_level_values('edp').isin(("PID", "RID"))
+        ]
         .unstack(0)
         .unstack(0)
         .unstack(0)
@@ -81,7 +76,6 @@ def only_drifts(df_no_collapse):
 
 
 def scatter_pid_rid(filtered_df):
-
     # we fit each archetype-story-direction individually
     archetype = ("smrf", "9", "ii", "2", "2")
     # archetype = ("smrf", "3", "ii")
