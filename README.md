@@ -4,11 +4,18 @@ Research analysis data for the *improved FEMA P-58 residual drift generation* pr
 ## Setting up the environment
 
 ```
+# using venv
+$ python -m venv {path/to/virtual_environment}
+$ source {path/to/virtual_environment}/bin/activate
+$ python -m pip install -r requirements.txt
+
+# using conda
 $ conda create -n rid_prj -c conda-forge python=3.12 -y
 $ conda activate rid_prj
 $ python -m pip install -r requirements.txt
 ```
-
+You would then have to configure your editor to use the interpreter from the newly created environment. [(Emacs)](https://github.com/jorgenschaefer/pyvenv)
+[(pycharm)](https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html) [(spyder)](https://docs.spyder-ide.org/current/faq.html?highlight=venv#using-existing-environment)  
 The interpreter is always assumed to be launched at the project root (the directory containing `src`, not `src` itself).
 
 ## Directory structure
@@ -34,15 +41,15 @@ We use the following directory structure: `results/{result-category}/{method}/{r
 
 After cloning the repository and setting up the environment, issue the following command to pull the results:
 ```
-dvc pull
+$ dvc pull
 ```
 
 After making changes to the results, they should be added with DVC and then committed with git.
 ```
-dvc add results
-dvc push
-git add {changed-dvc-files}
-git commit -m 'DVC - update results'
+$ dvc add results
+$ dvc push
+$ git add {changed-dvc-files}
+$ git commit -m 'DVC - update results'
 ```
 
 ## Data processing pipeline
@@ -52,10 +59,10 @@ Note that the results should already be available using DVC.
 
 1. Fit all the models. Creates `parameters.parquet` and `models.picle` files in `results/parameters/{method}/`.
 ```
-python src/fit_models.py
+$ python src/fit_models.py
 ```
 
 2. Create plots that help assess the quality of the fit. Creates `fit_{system}_{stories}_{rc}.pdf` files in `results/figures/{method}/`.
 ```
-python src/plot_fit.py
+$ python src/plot_fit.py
 ```
