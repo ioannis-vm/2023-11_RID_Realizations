@@ -1,9 +1,11 @@
 * RID Project Activity Log
 Note that the log is in reverse order (newer entries appear at the top)
+**** [2024-01-06 Sat 15:21]
+Implemented weighted MLE. Had issues with np.exp overflowing, required separating cases for the calculation of the weights. It's due to the functional form of the lognormal density's peak that we use to normalize the weight function.
+The figures suggest a better fit around the area we are most interested now. We can still experiment with alternative values for the maximum weight relative to the baseline.
 **** [2024-01-04 Thu 18:03]
 I wrote the code to fit a model to all available data. The fitted models are stored in =results/= using pickle.
 I generated figures showing the quality of the fit with the bilinear Weibull model.
-
 **** [2024-01-04 Thu 15:16]
 Refactored the code to tidy it up.
 **** [2024-01-04 Thu 13:14]
