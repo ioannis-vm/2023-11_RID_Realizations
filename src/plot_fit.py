@@ -68,30 +68,35 @@ def generate_figure(system, stories, rc, model_df, method, models_path):
                 bbox={'facecolor': 'white', 'alpha': 0.5},
                 fontsize=6,
             )
-            axs[i_row, i_col].fill_between(
-                (0.002, 0.015), -1, 1, alpha=0.10, color='black'
-            )
-            axs[i_row, i_col].set(xlim=(-0.005, 0.05), ylim=(-0.005, 0.07))
+            # axs[i_row, i_col].fill_between(
+            #     (0.002, 0.015), -1, 1, alpha=0.10, color='black'
+            # )
+            axs[i_row, i_col].set(xlim=(-0.005, 0.025), ylim=(-0.005, 0.05))
     fig.suptitle(f'{stories.upper()}-STORY RC {rc.upper()} {system.upper()}')
-    fig.subplots_adjust(
-        wspace=0.00, hspace=0.00, top=0.94, left=0.07, right=0.98, bottom=0.08
-    )
     fig.text(0.5, 0.01, 'Residual Inter-story Drift (RID)', ha='center')
     fig.text(
         0.01, 0.50, 'Peak Inter-story Drift (PID)', va='center', rotation='vertical'
     )
+    left_adj = {'3': 0.17, '6': 0.10, '9': 0.07}
+    fig.subplots_adjust(
+        wspace=0.00,
+        hspace=0.00,
+        top=0.94,
+        left=left_adj[stories],
+        right=0.98,
+        bottom=0.08,
+    )
     # plt.show()
-    fig.tight_layout()
     plt.savefig(
         store_info(
-            f'results/figures/{method}/fit_{system}_{stories}_{rc}.pdf', [models_path]
+            f'results/figures/{method}/fit_{system}_{stories}_{rc}.pdf',
+            [models_path],
         )
     )
     plt.close()
 
 
 def main():
-
     # load models
     method = 'weibull_bilinear'
     models_path = f'results/parameters/{method}/models.pickle'
