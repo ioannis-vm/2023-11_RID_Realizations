@@ -2,9 +2,9 @@
 Fit all models to the data and store the parameters.
 """
 
+from itertools import product
 import pickle
 import pandas as pd
-from itertools import product
 import tqdm
 from src.models import Model_1_Weibull
 from src.handle_data import load_dataset
