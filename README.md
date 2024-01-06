@@ -18,6 +18,15 @@ You would then have to configure your editor to use the interpreter from the new
 [(pycharm)](https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html) [(spyder)](https://docs.spyder-ide.org/current/faq.html?highlight=venv#using-existing-environment)  
 The interpreter is always assumed to be launched at the project root (the directory containing `src`, not `src` itself).
 
+Tearing down the enviornment, if needed:
+```
+# using venv
+$ rm -r {path/to/virtual_environment}
+
+# using conda
+conda remove -n rid_prj --all
+```
+
 ## Directory structure
 
 `src/` contains the source code.
