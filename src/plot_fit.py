@@ -99,6 +99,8 @@ def generate_figure(system, stories, rc, model_df, method, models_path):
 def main():
     # load models
     method = 'weibull_bilinear'
+    # method = 'gamma_bilinear'
+    # method = 'beta_bilinear'
     models_path = f'results/parameters/{method}/models.pickle'
     with open(models_path, 'rb') as f:
         models = pickle.load(f)
