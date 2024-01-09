@@ -24,18 +24,14 @@ def get_all_cases():
         for lv in range(1, int(st) + 1):
             lv = int(lv)
             cases.append((sys, st, rc, str(lv), dr))
-
     return cases
 
 
-def obtain_weibull_parameters():
+def obtain_parameters(model_class, output_path):
     df = only_drifts(remove_collapse(load_dataset()[0]))
-
     cases = get_all_cases()
-
     parameters = []
     loglikelihood = []
-
     models = {}
 
     for the_case in tqdm.tqdm(cases):
@@ -43,7 +39,7 @@ def obtain_weibull_parameters():
         rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
         pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
 
-        model = Model_1_Weibull()
+        model = model_class()
         model.add_data(pid_vals, rid_vals)
         model.censoring_limit = 0.0005
         model.fit(method='mle')
@@ -62,22 +58,30 @@ def obtain_weibull_parameters():
     res.sort_index(inplace=True)
     res.to_parquet(
         store_info(
-            'results/parameters/weibull_bilinear/parameters.parquet',
+            output_path,
             ['data/edp.parquet'],
         )
     )
     with open(
         store_info(
-            'results/parameters/weibull_bilinear/models.pickle',
+            output_path.replace('parameters.parquet', 'models.pickle'),
             ['data/edp.parquet'],
         ),
-        'wb'
+        'wb',
     ) as f:
         pickle.dump(models, f)
 
 
 def main():
-    obtain_weibull_parameters()
+    obtain_parameters(
+        Model_1_Weibull, 'results/parameters/weibull_bilinear/parameters.parquet'
+    )
+    obtain_parameters(
+        Model_2_Gamma, 'results/parameters/gamma_bilinear/parameters.parquet'
+    )
+    obtain_parameters(
+        Model_3_Beta, 'results/parameters/beta_bilinear/parameters.parquet'
+    )
 
 
 if __name__ == '__main__':
