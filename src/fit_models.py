@@ -6,7 +6,7 @@ from itertools import product
 import pickle
 import pandas as pd
 import tqdm
-from src.models import Model_1_Weibull
+from src import models
 from src.handle_data import load_dataset
 from src.handle_data import remove_collapse
 from src.handle_data import only_drifts
@@ -74,13 +74,13 @@ def obtain_parameters(model_class, output_path):
 
 def main():
     obtain_parameters(
-        Model_1_Weibull, 'results/parameters/weibull_bilinear/parameters.parquet'
+        models.Model_1_Weibull, 'results/parameters/weibull_bilinear/parameters.parquet'
     )
     obtain_parameters(
-        Model_2_Gamma, 'results/parameters/gamma_bilinear/parameters.parquet'
+        models.Model_2_Gamma, 'results/parameters/gamma_bilinear/parameters.parquet'
     )
     obtain_parameters(
-        Model_3_Beta, 'results/parameters/beta_bilinear/parameters.parquet'
+        models.Model_3_Beta, 'results/parameters/beta_bilinear/parameters.parquet'
     )
 
 
