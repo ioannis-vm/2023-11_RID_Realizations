@@ -13,75 +13,104 @@ from src.handle_data import only_drifts
 from src.util import store_info
 
 
-def get_all_cases():
+def get_all_cases(data_gathering_approach):
     cases = []
-    for sys, st, rc, dr in product(
-        ('smrf', 'scbf', 'brbf'),  # system
-        ('3', '6', '9'),  # number of stories
-        ('ii', 'iv'),  # risk category
-        ('1', '2'),  # direction (X, Y)
-    ):
-        for lv in range(1, int(st) + 1):
-            lv = int(lv)
-            cases.append((sys, st, rc, str(lv), dr))
+    if data_gathering_approach == 'separate_directions':
+        for sys, st, rc, dr in product(
+            ('smrf', 'scbf', 'brbf'),  # system
+            ('3', '6', '9'),  # number of stories
+            ('ii', 'iv'),  # risk category
+            ('1', '2'),  # direction (X, Y)
+        ):
+            for lv in range(1, int(st) + 1):
+                lv = int(lv)
+                cases.append((sys, st, rc, str(lv), dr))
+    elif data_gathering_approach == 'bundled_directions':
+        for sys, st, rc in product(
+            ('smrf', 'scbf', 'brbf'),  # system
+            ('3', '6', '9'),  # number of stories
+            ('ii', 'iv'),  # risk category
+        ):
+            for lv in range(1, int(st) + 1):
+                lv = int(lv)
+                cases.append((sys, st, rc, str(lv)))
+    else:
+        raise ValueError(
+            f'Invalid data_gathering_approach: {data_gathering_approach}'
+        )
+
     return cases
 
 
-def obtain_parameters(model_class, output_path):
+def obtain_parameters(method, data_gathering_approach):
     df = only_drifts(remove_collapse(load_dataset()[0]))
-    cases = get_all_cases()
+    cases = get_all_cases(data_gathering_approach)
     parameters = []
     loglikelihood = []
-    models = {}
+    model_objects = {}
 
-    for the_case in tqdm.tqdm(cases):
+    model_classes = {
+        'weibull_bilinear': models.Model_1_Weibull,
+        'gamma_bilinear': models.Model_2_Gamma,
+        'beta_bilinear': models.Model_3_Beta,
+    }
+    for the_case in cases:
         case_df = df[the_case].dropna()
+        if data_gathering_approach == 'bundled_directions':
+            case_df = case_df.stack(level=0)
         rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
         pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
 
-        model = model_class()
+        model = model_classes[method]()
         model.add_data(pid_vals, rid_vals)
         model.censoring_limit = 0.0005
         model.fit(method='mle')
         loglikelihood.append(-model.fit_meta.fun)
         parameters.append(model.parameters)
-        models[the_case] = model
+        model_objects[the_case] = model
+
+    if data_gathering_approach == 'bundled_directions':
+        multiindex = pd.MultiIndex.from_tuples(
+            cases, names=('system', 'stories', 'rc', 'story')
+        )
+    else:
+        multiindex = pd.MultiIndex.from_tuples(
+            cases, names=('system', 'stories', 'rc', 'story', 'direction')
+        )
 
     res = pd.DataFrame(
         parameters,
-        index=pd.MultiIndex.from_tuples(
-            cases, names=('system', 'stories', 'rc', 'story', 'direction')
-        ),
+        index=multiindex,
         columns=['c_pid_0', 'c_lamda_slope', 'c_kapa'],
     )
     res['loglikelihood'] = loglikelihood
     res.sort_index(inplace=True)
     res.to_parquet(
         store_info(
-            output_path,
+            f'results/parameters/{data_gathering_approach}/{method}/parameters.parquet',
             ['data/edp.parquet'],
         )
     )
     with open(
         store_info(
-            output_path.replace('parameters.parquet', 'models.pickle'),
+            f'results/parameters/{data_gathering_approach}/{method}/models.pickle',
             ['data/edp.parquet'],
         ),
         'wb',
     ) as f:
-        pickle.dump(models, f)
+        pickle.dump(model_objects, f)
 
 
 def main():
-    obtain_parameters(
-        models.Model_1_Weibull, 'results/parameters/weibull_bilinear/parameters.parquet'
-    )
-    obtain_parameters(
-        models.Model_2_Gamma, 'results/parameters/gamma_bilinear/parameters.parquet'
-    )
-    obtain_parameters(
-        models.Model_3_Beta, 'results/parameters/beta_bilinear/parameters.parquet'
-    )
+    for method, data_gathering_approach in tqdm.tqdm(
+        list(
+            product(
+                ('weibull_bilinear', 'gamma_bilinear', 'beta_bilinear'),
+                ('separate_directions', 'bundled_directions'),
+            )
+        )
+    ):
+        obtain_parameters(method, data_gathering_approach)
 
 
 if __name__ == '__main__':
