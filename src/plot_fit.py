@@ -48,7 +48,12 @@ def generate_figure(system, stories, rc, model_df, method, models_path):
             direction = str(i_col % 2 + 1)
             model = df[(story, direction)]
             model.plot_model(axs[i_row, i_col])
-            text = '\n'.join([f'{x:.5f}' for x in model.parameters])
+            text = '\n'.join(
+                [
+                    f'{y}={x:.5f}'
+                    for x, y in zip(model.parameters, model.parameter_names)
+                ]
+            )
             axs[i_row, i_col].text(
                 0.98,
                 0.02,
@@ -56,7 +61,7 @@ def generate_figure(system, stories, rc, model_df, method, models_path):
                 horizontalalignment='right',
                 verticalalignment='bottom',
                 transform=axs[i_row, i_col].transAxes,
-                fontsize=6,
+                fontsize=5,
             )
             text = f'{story}{drc[direction]}'
             axs[i_row, i_col].text(
