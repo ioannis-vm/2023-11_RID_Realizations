@@ -76,7 +76,6 @@ def main():
     model.plot_slice(ax, pid_min, pid_max, 0.002)
     plt.show()
 
-
     # Gamma, MLE
 
     model = Model_2_Gamma()
@@ -116,6 +115,7 @@ def main():
     _, ax = plt.subplots()
     model.plot_slice(ax, pid_min, pid_max, 0.002)
     plt.show()
+
 
 if __name__ == '__main__':
     main()
