@@ -405,7 +405,7 @@ class Model_3_Beta(BilinearModel):
 
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
         _, _, c_alpha = self.parameters
-        beta_val = self.beta_fnc(pid)
+        beta_val = self.lamda_fnc(pid)
         pdf_val = sp.stats.beta.pdf(rid, beta_val, c_alpha)
         pdf_val[pdf_val < 1e-6] = 1e-6
         if censoring_limit:
@@ -418,12 +418,12 @@ class Model_3_Beta(BilinearModel):
 
     def evaluate_cdf(self, rid, pid):
         _, _, c_alpha = self.parameters
-        beta_val = self.beta_fnc(pid)
+        beta_val = self.lamda_fnc(pid)
         return sp.stats.beta.cdf(rid, beta_val, c_alpha)
 
     def evaluate_inverse_cdf(self, quantile, pid):
         _, _, c_alpha = self.parameters
-        beta_val = self.beta_fnc(pid)
+        beta_val = self.lamda_fnc(pid)
         return sp.stats.beta.ppf(quantile, beta_val, c_alpha)
 
     def fit(self, *args, method='quantile', **kwargs):
