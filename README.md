@@ -66,6 +66,12 @@ $ git commit -m 'DVC - update results'
 This section will describe in what order to execute the code to reproduce all of the project's analysis results.
 Note that the results should already be available using DVC.
 
+Set the `PYTHONPATH` variable
+
+```
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+```
+
 1. Fit all the models. Creates `parameters.parquet` and `models.picle` files in `results/parameters/{method}/`.
 ```
 $ python src/fit_models.py
