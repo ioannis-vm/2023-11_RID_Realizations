@@ -3,6 +3,7 @@ Produce plots to visually assess the quality of the fit to PID-RID
 data for all considered archetypes.
 """
 
+import concurrent.futures
 from itertools import product
 import pickle
 import tqdm
@@ -96,25 +97,59 @@ def generate_figure(system, stories, rc, model_df, method, models_path):
     plt.close()
 
 
-def main():
-    # load models
-    method = 'weibull_bilinear'
-    # method = 'gamma_bilinear'
-    # method = 'beta_bilinear'
-    models_path = f'results/parameters/{method}/models.pickle'
-    with open(models_path, 'rb') as f:
-        models = pickle.load(f)
+def main(parallel=True):
+    methods = ('weibull_bilinear', 'gamma_bilinear', 'beta_bilinear')
 
-    # turn the dict into a dataframe for more convenient indexing
-    # operations
-    model_df = pd.Series(models.values(), index=models.keys())
-    model_df.index.names = ('system', 'stories', 'rc', 'loc', 'dir')
+    model_dfs = {}
+    for method in methods:
+        models_path = f'results/parameters/{method}/models.pickle'
+        with open(models_path, 'rb') as f:
+            models = pickle.load(f)
 
-    for system, stories, rc in tqdm.tqdm(
-        list(product(('smrf', 'scbf', 'brbf'), ('3', '6', '9'), ('ii', 'iv')))
-    ):
-        generate_figure(system, stories, rc, model_df, method, models_path)
+        # turn the dict into a dataframe for more convenient indexing
+        # operations
+        model_df = pd.Series(models.values(), index=models.keys())
+        model_df.index.names = ('system', 'stories', 'rc', 'loc', 'dir')
+        model_dfs[method] = model_df
+
+    if parallel is False:
+        # in series
+        for system, stories, rc, method in tqdm.tqdm(
+            list(
+                product(
+                    ('smrf', 'scbf', 'brbf'),
+                    ('3', '6', '9'),
+                    ('ii', 'iv'),
+                    methods,
+                )
+            )
+        ):
+            generate_figure(
+                system, stories, rc, model_dfs[method], method, models_path
+            )
+    else:
+        args_list = []
+        for system, stories, rc, method in list(
+            product(
+                ('smrf', 'scbf', 'brbf'),
+                ('3', '6', '9'),
+                ('ii', 'iv'),
+                methods,
+            )
+        ):
+            args_list.append(
+                (system, stories, rc, model_dfs[method], method, models_path)
+            )
+
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = {
+                executor.submit(generate_figure, *args): args for args in args_list
+            }
+            for future in tqdm.tqdm(
+                concurrent.futures.as_completed(futures), total=len(args_list)
+            ):
+                _ = future.result()
 
 
 if __name__ == '__main__':
-    main()
+    main(parallel=True)

@@ -60,6 +60,8 @@ class Model:
 
         self.censoring_limit = None
         self.parameters = None
+        self.parameter_names = None
+        self.parameter_bounds = None
         self.fit_status = False
         self.fit_meta = None
 
@@ -274,13 +276,33 @@ class BilinearModel(Model):
     One parameter constant, the other varies in a bilinear fashion.
     """
 
-    def lamda_fnc(self, pid):
-        c_pid_0, c_lamda_slope, _ = self.parameters
+    def bilinear_fnc(self, pid):
+        theta_1_a, c_lamda_slope, _ = self.parameters
         c_lamda_0 = 1.0e-8
         lamda = np.ones_like(pid) * c_lamda_0
-        mask = pid >= c_pid_0
-        lamda[mask] = (pid[mask] - c_pid_0) * c_lamda_slope + c_lamda_0
+        mask = pid >= theta_1_a
+        lamda[mask] = (pid[mask] - theta_1_a) * c_lamda_slope + c_lamda_0
         return lamda
+
+    def fit(self, *args, method='quantile', **kwargs):
+        # Initial values
+
+        if method == 'quantiles':
+            use_method = self.get_quantile_objective
+        elif method == 'mle':
+            use_method = self.get_mle_objective
+
+        result = minimize(
+            use_method,
+            self.parameters,
+            bounds=self.bounds,
+            method="Nelder-Mead",
+            options={"maxiter": 10000},
+            tol=1e-6,
+        )
+        self.fit_meta = result
+        assert result.success, "Minimization failed."
+        self.parameters = result.x
 
 
 class Model_1_Weibull(BilinearModel):
@@ -288,15 +310,19 @@ class Model_1_Weibull(BilinearModel):
     Weibull model
     """
 
+    def __init__(self):
+        super(Model_1_Weibull, self).__init__()
+        # initial parameters
+        self.parameters = np.array((0.008, 0.30, 1.30))
+        # parameter names
+        self.parameter_names = ('pid_0', 'lambda_slope', 'kappa')
+        # bounds
+        self.bounds = ((0.00, 0.02), (0.00, 1.00), (0.80, 4.00))
+
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
-        _, _, c_kapa = self.parameters
-        lamda_val = self.lamda_fnc(pid)
-        pdf_val = sp.stats.weibull_min.pdf(rid, c_kapa, 0.00, lamda_val)
-        # pdf_val = (
-        #     np.exp(-((rid / lamda_val) ** c_kapa))
-        #     * c_kapa
-        #     * (rid / lamda_val) ** (c_kapa - 1.00)
-        # ) / lamda_val
+        _, _, theta_3 = self.parameters
+        bilinear_fnc_val = self.bilinear_fnc(pid)
+        pdf_val = sp.stats.weibull_min.pdf(rid, theta_3, 0.00, bilinear_fnc_val)
         pdf_val[pdf_val < 1e-6] = 1e-6
         if censoring_limit:
             censored_range_mass = self.evaluate_cdf(
@@ -307,41 +333,14 @@ class Model_1_Weibull(BilinearModel):
         return pdf_val
 
     def evaluate_cdf(self, rid, pid):
-        _, _, c_kapa = self.parameters
-        lamda_val = self.lamda_fnc(pid)
-        # return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
-        return sp.stats.weibull_min.cdf(rid, c_kapa, 0.00, lamda_val)
+        _, _, theta_3 = self.parameters
+        bilinear_fnc_val = self.bilinear_fnc(pid)
+        return sp.stats.weibull_min.cdf(rid, theta_3, 0.00, bilinear_fnc_val)
 
     def evaluate_inverse_cdf(self, quantile, pid):
-        _, _, c_kapa = self.parameters
-        lamda_val = self.lamda_fnc(pid)
-        # return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
-        return sp.stats.weibull_min.ppf(quantile, c_kapa, 0.00, lamda_val)
-
-    def fit(self, *args, method='quantile', **kwargs):
-        # Initial values
-        c_pid_0 = 0.008
-        c_lamda_slope = 0.30
-        c_kapa = 1.30
-
-        self.parameters = (c_pid_0, c_lamda_slope, c_kapa)
-
-        if method == 'quantiles':
-            use_method = self.get_quantile_objective
-        elif method == 'mle':
-            use_method = self.get_mle_objective
-
-        result = minimize(
-            use_method,
-            [c_pid_0, c_lamda_slope, c_kapa],
-            bounds=((0.00, 0.02), (0.00, 1.00), (0.80, 4.00)),
-            method="Nelder-Mead",
-            options={"maxiter": 10000},
-            tol=1e-6,
-        )
-        self.fit_meta = result
-        assert result.success, "Minimization failed."
-        self.parameters = result.x
+        _, _, theta_3 = self.parameters
+        bilinear_fnc_val = self.bilinear_fnc(pid)
+        return sp.stats.weibull_min.ppf(quantile, theta_3, 0.00, bilinear_fnc_val)
 
 
 class Model_2_Gamma(BilinearModel):
@@ -349,10 +348,19 @@ class Model_2_Gamma(BilinearModel):
     Gamma model
     """
 
+    def __init__(self):
+        super(Model_2_Gamma, self).__init__()
+        # initial parameters
+        self.parameters = np.array((0.008, 0.30, 1.30))
+        # parameter names
+        self.parameter_names = ('pid_0', 'lambda_slope', 'kappa')
+        # bounds
+        self.bounds = ((0.00, 0.02), (0.00, 1.00), (0.80, 4.00))
+
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
-        _, _, c_kapa = self.parameters
-        lamda_val = self.lamda_fnc(pid)
-        pdf_val = sp.stats.gamma.pdf(rid, c_kapa, 0.00, lamda_val)
+        _, _, theta_3 = self.parameters
+        bilinear_fnc_val = self.bilinear_fnc(pid)
+        pdf_val = sp.stats.gamma.pdf(rid, theta_3, 0.00, bilinear_fnc_val)
         pdf_val[pdf_val < 1e-6] = 1e-6
         if censoring_limit:
             censored_range_mass = self.evaluate_cdf(
@@ -363,39 +371,15 @@ class Model_2_Gamma(BilinearModel):
         return pdf_val
 
     def evaluate_cdf(self, rid, pid):
-        _, _, c_kapa = self.parameters
-        lamda_val = self.lamda_fnc(pid)
-        return sp.stats.gamma.cdf(rid, c_kapa, 0.00, lamda_val)
+        _, _, theta_3 = self.parameters
+        bilinear_fnc_val = self.bilinear_fnc(pid)
+        return sp.stats.gamma.cdf(rid, theta_3, 0.00, bilinear_fnc_val)
 
     def evaluate_inverse_cdf(self, quantile, pid):
-        _, _, c_kapa = self.parameters
-        lamda_val = self.lamda_fnc(pid)
-        return sp.stats.gamma.ppf(quantile, c_kapa, 0.00, lamda_val)
+        _, _, theta_3 = self.parameters
+        bilinear_fnc_val = self.bilinear_fnc(pid)
+        return sp.stats.gamma.ppf(quantile, theta_3, 0.00, bilinear_fnc_val)
 
-    def fit(self, *args, method='quantile', **kwargs):
-        # Initial values
-        c_pid_0 = 0.008
-        c_lamda_slope = 0.30
-        c_kapa = 1.30
-
-        self.parameters = (c_pid_0, c_lamda_slope, c_kapa)
-
-        if method == 'quantiles':
-            use_method = self.get_quantile_objective
-        elif method == 'mle':
-            use_method = self.get_mle_objective
-
-        result = minimize(
-            use_method,
-            [c_pid_0, c_lamda_slope, c_kapa],
-            bounds=((0.00, 0.02), (0.00, 1.00), (0.80, 4.00)),
-            method="Nelder-Mead",
-            options={"maxiter": 10000},
-            tol=1e-6,
-        )
-        self.fit_meta = result
-        assert result.success, "Minimization failed."
-        self.parameters = result.x
 
 
 class Model_3_Beta(BilinearModel):
@@ -403,10 +387,19 @@ class Model_3_Beta(BilinearModel):
     Beta model
     """
 
+    def __init__(self):
+        super(Model_3_Beta, self).__init__()
+        # initial parameters
+        self.parameters = np.array((0.004, 100.00, 500.00))
+        # parameter names
+        self.parameter_names = ('pid_0', 'alpha_slope', 'beta')
+        # bounds
+        self.bounds = None
+
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
-        _, _, c_alpha = self.parameters
-        beta_val = self.lamda_fnc(pid)
-        pdf_val = sp.stats.beta.pdf(rid, beta_val, c_alpha)
+        _, _, c_beta = self.parameters
+        c_alpha = self.bilinear_fnc(pid)
+        pdf_val = sp.stats.beta.pdf(rid, c_alpha, c_beta)
         pdf_val[pdf_val < 1e-6] = 1e-6
         if censoring_limit:
             censored_range_mass = self.evaluate_cdf(
@@ -417,36 +410,12 @@ class Model_3_Beta(BilinearModel):
         return pdf_val
 
     def evaluate_cdf(self, rid, pid):
-        _, _, c_alpha = self.parameters
-        beta_val = self.lamda_fnc(pid)
-        return sp.stats.beta.cdf(rid, beta_val, c_alpha)
+        _, _, c_beta = self.parameters
+        c_alpha = self.bilinear_fnc(pid)
+        return sp.stats.beta.cdf(rid, c_alpha, c_beta)
 
     def evaluate_inverse_cdf(self, quantile, pid):
-        _, _, c_alpha = self.parameters
-        beta_val = self.lamda_fnc(pid)
-        return sp.stats.beta.ppf(quantile, beta_val, c_alpha)
+        _, _, c_beta = self.parameters
+        c_alpha = self.bilinear_fnc(pid)
+        return sp.stats.beta.ppf(quantile, c_alpha, c_beta)
 
-    def fit(self, *args, method='quantile', **kwargs):
-        # Initial values
-        c_pid_0 = 0.008
-        c_beta_slope = 0.30
-        c_alpha = 1.30
-
-        self.parameters = (c_pid_0, c_beta_slope, c_alpha)
-
-        if method == 'quantiles':
-            use_method = self.get_quantile_objective
-        elif method == 'mle':
-            use_method = self.get_mle_objective
-
-        result = minimize(
-            use_method,
-            [c_pid_0, c_beta_slope, c_alpha],
-            # bounds=((0.00, 0.02), (0.00, 1.00), (0.80, 4.00)),
-            method="Nelder-Mead",
-            options={"maxiter": 10000},
-            tol=1e-6,
-        )
-        self.fit_meta = result
-        assert result.success, "Minimization failed."
-        self.parameters = result.x
