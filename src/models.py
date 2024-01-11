@@ -124,6 +124,12 @@ class Model:
         """
         raise NotImplementedError("Subclasses should implement this.")
 
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        """
+        Evaluate the conditional RID|PID PDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
     def evaluate_cdf(self, rid, pid):
         """
         Evaluate the conditional RID|PID CDF.
@@ -284,6 +290,24 @@ class BilinearModel(Model):
         lamda[mask] = (pid[mask] - theta_1_a) * c_lamda_slope + c_lamda_0
         return lamda
 
+    def evaluate_inverse_cdf(self, quantile, pid):
+        """
+        Evaluate the inverse of the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        """
+        Evaluate the conditional RID|PID PDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_cdf(self, rid, pid):
+        """
+        Evaluate the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
     def fit(self, *args, method='quantile', **kwargs):
         # Initial values
 
@@ -295,7 +319,7 @@ class BilinearModel(Model):
         result = minimize(
             use_method,
             self.parameters,
-            bounds=self.bounds,
+            bounds=self.parameter_bounds,
             method="Nelder-Mead",
             options={"maxiter": 10000},
             tol=1e-6,
@@ -311,13 +335,13 @@ class Model_1_Weibull(BilinearModel):
     """
 
     def __init__(self):
-        super(Model_1_Weibull, self).__init__()
+        super().__init__()
         # initial parameters
         self.parameters = np.array((0.008, 0.30, 1.30))
         # parameter names
         self.parameter_names = ('pid_0', 'lambda_slope', 'kappa')
         # bounds
-        self.bounds = ((0.00, 0.02), (0.00, 1.00), (0.80, 4.00))
+        self.parameter_bounds = ((0.00, 0.02), (0.00, 1.00), (0.80, 4.00))
 
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
         _, _, theta_3 = self.parameters
@@ -349,13 +373,13 @@ class Model_2_Gamma(BilinearModel):
     """
 
     def __init__(self):
-        super(Model_2_Gamma, self).__init__()
+        super().__init__()
         # initial parameters
         self.parameters = np.array((0.008, 0.30, 1.30))
         # parameter names
         self.parameter_names = ('pid_0', 'lambda_slope', 'kappa')
         # bounds
-        self.bounds = ((0.00, 0.02), (0.00, 1.00), (0.80, 4.00))
+        self.parameter_bounds = ((0.00, 0.02), (0.00, 1.00), (0.80, 4.00))
 
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
         _, _, theta_3 = self.parameters
@@ -381,20 +405,19 @@ class Model_2_Gamma(BilinearModel):
         return sp.stats.gamma.ppf(quantile, theta_3, 0.00, bilinear_fnc_val)
 
 
-
 class Model_3_Beta(BilinearModel):
     """
     Beta model
     """
 
     def __init__(self):
-        super(Model_3_Beta, self).__init__()
+        super().__init__()
         # initial parameters
         self.parameters = np.array((0.004, 100.00, 500.00))
         # parameter names
         self.parameter_names = ('pid_0', 'alpha_slope', 'beta')
         # bounds
-        self.bounds = None
+        self.parameter_bounds = None
 
     def evaluate_pdf(self, rid, pid, censoring_limit=None):
         _, _, c_beta = self.parameters
@@ -418,4 +441,3 @@ class Model_3_Beta(BilinearModel):
         _, _, c_beta = self.parameters
         c_alpha = self.bilinear_fnc(pid)
         return sp.stats.beta.ppf(quantile, c_alpha, c_beta)
-

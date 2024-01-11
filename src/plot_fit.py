@@ -54,6 +54,7 @@ def generate_figure(system, stories, rc, model_df, method, models_path):
                     for x, y in zip(model.parameters, model.parameter_names)
                 ]
             )
+            text += '\n' + f'LL={-model.fit_meta.fun:.2f}'
             axs[i_row, i_col].text(
                 0.98,
                 0.02,
@@ -61,7 +62,7 @@ def generate_figure(system, stories, rc, model_df, method, models_path):
                 horizontalalignment='right',
                 verticalalignment='bottom',
                 transform=axs[i_row, i_col].transAxes,
-                fontsize=5,
+                fontsize=4,
             )
             text = f'{story}{drc[direction]}'
             axs[i_row, i_col].text(
