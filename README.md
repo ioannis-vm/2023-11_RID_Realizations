@@ -36,8 +36,9 @@ conda remove -n rid_prj --all
 `data/` contains the time-history analysis data we use.
 
 `results` contains analysis results, such as fit parameters or generated figures, and should not be version-controled.  
-We use the following directory structure: `results/{result-category}/{method}/{result-filename}`.  
+We use the following directory structure: `results/{result-category}/{data_gathering_approach}/{method}/{result-filename}`.  
 `{result-category}` can be any of `parameters`, `tables`, `figures`.  
+{data_gathering_approach} can be any of `separate_directions`, `bundled_directions`.  
 `{method}` corresponds to the fitting methods we examine.  
 `{result-filename}` is the file name for a type of result, and it can be the same for different methods.  
 
