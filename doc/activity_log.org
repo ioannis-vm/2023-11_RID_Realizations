@@ -1,5 +1,12 @@
 * RID Project Activity Log
 Note that the log is in reverse order (newer entries appear at the top)
+**** [2024-01-11 Thu 08:44]
+Completed the following:
+- [X] add parameter names on the figures
+- [X] add likelihood on the figures
+- [X] generate more samples for a single case
+- [X] Bundling the results of the two directions
+
 **** [2024-01-09 Tue 05:26]
 Added two more distributions.
 I still need to look a bit into Beta, because its parameters are not quite the same as "shape" and "scale", whereas the other two distributions share that fact for their parameters.
