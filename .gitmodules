@@ -1,0 +1,6 @@
+[submodule "extra/improved_methodology_demo"]
+	path = extra/improved_methodology_demo
+	url = https://github.com/ioannis-vm/2023-11_RID_Realizations-improved_methodology_demo.git
+[submodule "extra/structural_analysis"]
+	path = extra/structural_analysis
+	url = https://github.com/ioannis-vm/2023-11_RID_Realizations-structural_analysis.git
