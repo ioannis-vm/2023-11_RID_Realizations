@@ -47,19 +47,26 @@ We use the following directory structure: `results/{result-category}/{data_gathe
 
 ## Data version control
 
-`results` is not version controlled, but the contents are tracked with [DVC](https://dvc.org/).
+`data/` and `results/` are not version controlled, but the contents are tracked with [DVC](https://dvc.org/).
 
-After cloning the repository and setting up the environment, issue the following command to pull the results:
+After cloning the repository and setting up the environment, issue the following command to pull the contents:
 ```
 $ dvc pull
 ```
 
-After making changes to the results, they should be added with DVC and then committed with git.
+After making changes, they should be added with DVC and then committed with git.
 ```
+
+# changes in data/
+$ dvc add data
+
+# changes in results/
 $ dvc add results
+
 $ dvc push
 $ git add {changed-dvc-files}
 $ git commit -m 'DVC - update results'
+
 ```
 
 ## Data processing pipeline
