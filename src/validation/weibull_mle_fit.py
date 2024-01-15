@@ -43,12 +43,12 @@ class Model_1v0_Weibull(Model):
         # return 1.00 - np.exp(-((rid / c_lamda) ** c_kapa))
         return sp.stats.weibull_min.cdf(rid, c_kapa, 0.00, c_lamda)
 
-    def evaluate_inverse_cdf(self, q, pid):
+    def evaluate_inverse_cdf(self, quantile, pid):
         c_lamda, c_kapa = self.parameters
         lamda = np.full(len(pid), c_lamda)
         kapa = np.full(len(pid), c_kapa)
         # return np.full(len(pid), c_lamda) * (-np.log(1.00 - q))**(1.00 / c_kapa)
-        return sp.stats.weibull_min.ppf(q, kapa, 0.00, lamda)
+        return sp.stats.weibull_min.ppf(quantile, kapa, 0.00, lamda)
 
     def get_mle_objective(self, parameters):
         # update the parameters
@@ -146,11 +146,11 @@ class Model_1v1_Weibull(Model):
         # return 1.00 - np.exp(-((rid / lamda_val) ** c_kapa))
         return sp.stats.weibull_min.cdf(rid, c_kapa, 0.00, lamda_val)
 
-    def evaluate_inverse_cdf(self, q, pid):
+    def evaluate_inverse_cdf(self, quantile, pid):
         _, c_kapa = self.parameters
         lamda_val = self.lamda_fnc(pid)
         # return lamda_val * (-np.log(1.00 - q))**(1.00 / c_kapa)
-        return sp.stats.weibull_min.ppf(q, c_kapa, 0.00, lamda_val)
+        return sp.stats.weibull_min.ppf(quantile, c_kapa, 0.00, lamda_val)
 
     def get_mle_objective(self, parameters):
         # update the parameters
