@@ -13,9 +13,9 @@ from src.handle_data import only_drifts
 
 
 def main():
-    the_case = ("smrf", "3", "ii", "3", "1")
+    the_case = ("scbf", "9", "ii", "3", "2")
 
-    df = only_drifts(remove_collapse(load_dataset()[0]))
+    df = only_drifts(remove_collapse(load_dataset('data/edp_extra.parquet')[0]))
     case_df = df[the_case].dropna()
 
     # # limit to given hazard level
@@ -23,6 +23,19 @@ def main():
 
     rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
     pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
+
+    # # >>>>>>>>>>>>>>>>>>>>>>>
+
+    # import numpy as np
+    # from scipy.interpolate import interp1d
+
+    # vals, bins = np.histogram(rid_vals)
+    # vals = np.append(vals, 1).astype(float)
+    # ifun = interp1d(bins, vals, kind='previous', fill_value='extrapolate')
+    # x = np.linspace(0.00, 0.05, 1000)
+    # y = ifun(x)
+
+    # # <<<<<<<<<<<<<<<<<<<<<<<
 
     # FEMA P-58
     model = Model_0_P58()
@@ -34,7 +47,6 @@ def main():
     _, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.08), ylim=(-0.005, 0.08))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
     # Weibull, MLE
@@ -47,12 +59,11 @@ def main():
     _, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.025), ylim=(-0.005, 0.06))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
     # plot a slice
-    pid_min = 0.01
-    pid_max = 0.015
+    pid_min = 0.025
+    pid_max = 0.035
     _, ax = plt.subplots()
     model.plot_slice(ax, pid_min, pid_max, 0.002)
     plt.show()
@@ -66,12 +77,11 @@ def main():
     _, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.025), ylim=(-0.005, 0.06))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
     # plot a slice
-    pid_min = 0.01
-    pid_max = 0.015
+    pid_min = 0.025
+    pid_max = 0.035
     _, ax = plt.subplots()
     model.plot_slice(ax, pid_min, pid_max, 0.002)
     plt.show()
@@ -86,12 +96,11 @@ def main():
     _, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.025), ylim=(-0.005, 0.06))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
     # plot a slice
-    pid_min = 0.01
-    pid_max = 0.015
+    pid_min = 0.025
+    pid_max = 0.035
     _, ax = plt.subplots()
     model.plot_slice(ax, pid_min, pid_max, 0.002)
     plt.show()
@@ -106,12 +115,11 @@ def main():
     _, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.025), ylim=(-0.005, 0.06))
-    ax.fill_between((0.002, 0.015), -1, 1, alpha=0.30, color='black')
     plt.show()
 
     # plot a slice
-    pid_min = 0.01
-    pid_max = 0.015
+    pid_min = 0.025
+    pid_max = 0.035
     _, ax = plt.subplots()
     model.plot_slice(ax, pid_min, pid_max, 0.002)
     plt.show()
@@ -119,3 +127,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
