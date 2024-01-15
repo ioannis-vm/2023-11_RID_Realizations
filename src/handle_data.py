@@ -2,16 +2,18 @@
 Functions to process the input data
 """
 
+import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def load_dataset():
+def load_dataset(path='data/edp.parquet'):
     """
     Load the analysis results and their units.
     """
-    df = pd.read_parquet('data/edp.parquet')
+
+    df = pd.read_parquet(path)
 
     # turn back into a pd.Series
     # (was stored as DataFrame to use df.to_parquet())
@@ -27,7 +29,7 @@ def remove_collapse(df):
     Remove collapse instances
     """
 
-    drift_threshold = 0.08  # that's 8%
+    drift_threshold = 0.10  # that's 10%
 
     initial_level_order = df.index.names
 
