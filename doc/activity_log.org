@@ -1,5 +1,7 @@
 * RID Project Activity Log
 Note that the log is in reverse order (newer entries appear at the top)
+**** [2024-01-15 Mon 11:17]
+Included the new results in the exploratory fit code. The results suggest that the conditional median should perhaps be modeled with a trilinear function.
 **** [2024-01-15 Mon 08:47]
 Finalized additional structural analyses.
 **** [2024-01-13 Sat 07:21]
