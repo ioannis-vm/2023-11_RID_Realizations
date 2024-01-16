@@ -1,5 +1,5 @@
 numpy==1.26.3
-pandas==2.1.4
+pandas==1.5.3
 pyarrow==14.0.2
 matplotlib==3.8.2
 seaborn==0.13.1
@@ -13,4 +13,3 @@ tqdm==4.66.1
 gitpython==3.1.40
 dvc==3.38.1
 dvc-gdrive==3.0.1
-pelicun==3.1
