@@ -4,3 +4,6 @@
 [submodule "extra/structural_analysis"]
 	path = extra/structural_analysis
 	url = https://github.com/ioannis-vm/2023-11_RID_Realizations-structural_analysis.git
+[submodule "doc/poster"]
+	path = doc/poster
+	url = https://github.com/ioannis-vm/2023-11_RID_Realizations-poster.git
