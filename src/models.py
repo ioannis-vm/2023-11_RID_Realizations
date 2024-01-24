@@ -277,9 +277,6 @@ class Model_0_P58(Model):
         delta_val = self.delta_fnc(pid, delta_y)
         return 0.50 * erfc(-((np.log(rid / delta_val))) / (np.sqrt(2.0) * beta))
 
-    def generate_rid_samples(self, pid_samples):
-        raise NotImplementedError("Subclasses should implement this.")
-
 
 class BilinearModel(Model):
     """
