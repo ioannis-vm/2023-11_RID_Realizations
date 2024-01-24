@@ -24,12 +24,12 @@ def load_dataset(path='data/edp.parquet'):
     return df, units
 
 
-def remove_collapse(df):
+def remove_collapse(df, drift_threshold=0.10):
     """
     Remove collapse instances
     """
 
-    drift_threshold = 0.10  # that's 10%
+    # drift_threshold = 0.10  # that's 10%
 
     initial_level_order = df.index.names
 
