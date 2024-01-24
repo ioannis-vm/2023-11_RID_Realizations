@@ -170,6 +170,10 @@ class Model:
     def generate_rid_samples(self, pid_samples):
         u = np.random.uniform(0.00, 1.00, len(pid_samples))
         rid_samples = self.evaluate_inverse_cdf(u, pid_samples)
+
+        self.sim_pid = pid_samples
+        self.sim_rid = rid_samples
+
         return rid_samples
 
     def plot_data(self, ax=None, scatter_kwargs=None):
