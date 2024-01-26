@@ -8,6 +8,7 @@ RID|PID models
 
 import numpy as np
 import scipy as sp
+from scipy.interpolate import interp1d
 from scipy.special import erfc
 from scipy.special import erfcinv
 from scipy.optimize import minimize
@@ -18,7 +19,7 @@ import seaborn as sns
 np.set_printoptions(formatter={'float': '{:0.5f}'.format})
 
 
-def lognormal_fragility_weight(rid, delta=0.01, beta=0.30):
+def lognormal_fragility_weight(rid, censoring_limit=None, delta=0.01, beta=0.60):
     """
     Determine MLE weights based on the RID value, considering the
     lognormal residual drift fragility curve for which the generated
@@ -42,6 +43,27 @@ def lognormal_fragility_weight(rid, delta=0.01, beta=0.30):
     scaling_factors[exponent <= 700.00] = (max_scaling - 1.00) * (
         delta / (np.exp(exponent[exponent <= 700.00]) * rid[exponent <= 700.00])
     ) + 1.00
+
+    # # also account for the marginal distribution of the RIDs we want
+    # # each potential RID value to have the same baseline weight
+    # # regardless of the number of data points in that neighborhood
+
+    # if censoring_limit:
+    #     bins = np.concatenate(
+    #         (
+    #             np.array((0.00, censoring_limit)),
+    #             np.linspace(censoring_limit, np.max(rid), 24),
+    #         )
+    #     )
+    # else:
+    #     bins = (np.linspace(0.00, np.max(censoring_limit), 24),)
+    # hist_bin_vals = np.histogram(rid, bins)[0]
+    # hist_fun = interp1d(
+    #     bins[:-1], hist_bin_vals, kind='previous', fill_value='extrapolate'
+    # )
+    # hist_vals = hist_fun(rid)
+
+    # scaling_factors = scaling_factors / ((hist_vals - 1.00)/50.00 + 1.00)
 
     return scaling_factors
 
@@ -140,7 +162,7 @@ class Model:
         # update the parameters
         self.parameters = parameters
         density = self.evaluate_pdf(self.raw_rid, self.raw_pid, self.censoring_limit)
-        weights = lognormal_fragility_weight(self.raw_rid)
+        weights = lognormal_fragility_weight(self.raw_rid, self.censoring_limit)
         negloglikelihood = -np.sum(weights * np.log(density))
         return negloglikelihood
 
@@ -309,7 +331,7 @@ class BilinearModel(Model):
         """
         raise NotImplementedError("Subclasses should implement this.")
 
-    def fit(self, *args, method='quantile', **kwargs):
+    def fit(self, *args, method='mle', **kwargs):
         # Initial values
 
         if method == 'quantiles':
