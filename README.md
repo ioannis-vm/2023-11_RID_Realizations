@@ -43,7 +43,7 @@ We use the following directory structure: `results/{result-category}/{data_gathe
 `{result-filename}` is the file name for a type of result, and it can be the same for different methods.  
 
 
-`doc/` contains the files used to generate documents associated with the project, such as the poster presentation, manuscripts and any other derivative work. It also contains an activity log.
+`doc/` contains the files used to generate documents associated with the project, such as the poster presentation, manuscripts and any other derivative work.
 
 ## Data version control
 
