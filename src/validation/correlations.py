@@ -3,6 +3,7 @@ Visualize correlations of variables with different model fitting
 approaches
 """
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -50,7 +51,7 @@ def main():
 
     # simulate data
     demand_sample_dict = {}
-    rid_sample_dict = {key: {} for key in story_dict.keys()}
+    rid_sample_dfs = []
     for hz in df_all_edps.index.get_level_values(0).unique():
         df_hz = df_all_edps.loc[hz, :]
         # re-index
@@ -85,28 +86,23 @@ def main():
         demand_sample_dict[hz] = demand_sample
 
         # generate RIDs
+        num_samples = len(demand_sample['PID', story_dict['i'], '1'].values)
+        assert num_samples == len(demand_sample['PID', story_dict['j'], '1'].values)
+        uniform_sample = np.random.uniform(0.00, 1.00, num_samples)
+        # uniform_sample = None --> No RID-RID correlation
         for key in story_dict.keys():
             model = model_dict[key]
+            model.uniform_sample = uniform_sample
             pids = demand_sample['PID', story_dict[key], '1'].values
             rids = model.generate_rid_samples(pids)
-            rid_sample_dict[key][hz] = rids
+            rid_sample_dfs.append(pd.Series(rids, name=(hz, story_dict[key])))
 
     demand_sample_df = pd.concat(
         demand_sample_dict.values(), keys=demand_sample_dict.keys(), names=['hz']
     )
 
-    rid_sample_df = (
-        pd.concat(
-            [
-                pd.Series(rid_sample_dict[key][hz], name=(hz, key))
-                for key in ['i', 'j']
-                for hz in df_all_edps.index.get_level_values(0).unique()
-            ],
-            axis=1,
-        )
-        .stack(0)
-        .sort_index()
-    )
+    rid_sample_df = pd.concat(rid_sample_dfs, axis=1)
+    rid_sample_df.columns.names = ('hz', 'story')
 
     # plot PID-PID correlation
     fig, ax = plt.subplots()
@@ -144,19 +140,19 @@ def main():
         label='direct fit',
     )
     ax.scatter(
-        rid_sample_df.loc[:, 'i'].values[::10],
-        rid_sample_df.loc[:, 'j'].values[::10],
-        edgecolor='red',
-        facecolor='white',
-        alpha=0.50,
-        label='conditional Weibull',
-    )
-    ax.scatter(
         df.stack(level=4).loc[:, ('scbf', '9', 'ii', story_dict['i'], 'RID')],
         df.stack(level=4).loc[:, ('scbf', '9', 'ii', story_dict['j'], 'RID')],
         edgecolor='black',
         facecolor='white',
         label='empirical',
+    )
+    ax.scatter(
+        rid_sample_df.xs(story_dict['i'], level='story', axis=1).stack().values[::10],
+        rid_sample_df.xs(story_dict['j'], level='story', axis=1).stack().values[::10],
+        edgecolor='red',
+        facecolor='white',
+        alpha=0.50,
+        label='conditional Weibull',
     )
     ax.plot([0.00, 1.00], [0.00, 1.00], linestyle='dashed', color='black')
     ax.set(xlim=(0.00, 0.08), ylim=(0.00, 0.08))
@@ -164,7 +160,8 @@ def main():
     ax.set(ylabel=f'RID, story {story_dict["j"]}')
     ax.grid(which='both', linewidth=0.30)
     plt.legend()
-    plt.show()
+    plt.savefig('/tmp/pid_rid_yes_correlation.png', dpi=600)
+    # plt.show()
 
     # plot RID-PID correlation
     plt.close()
@@ -178,7 +175,10 @@ def main():
         label='direct fit',
     )
     ax.scatter(
-        rid_sample_df.loc[:, 'i'].reorder_levels([1, 0]).sort_index().values[::10],
+        rid_sample_df.loc[:, story_dict['i']]
+        .reorder_levels([1, 0])
+        .sort_index()
+        .values[::10],
         demand_sample_df.loc[:, ('PID', story_dict['i'], '1')].values[::10],
         edgecolor='red',
         facecolor='white',
@@ -194,8 +194,8 @@ def main():
     )
     ax.plot([0.00, 1.00], [0.00, 1.00], linestyle='dashed', color='black')
     ax.set(xlim=(0.00, 0.08), ylim=(0.00, 0.08))
-    ax.set(xlabel=f'RID, story {story_dict["i"]}')
-    ax.set(ylabel=f'RID, story {story_dict["j"]}')
+    ax.set(xlabel=f'PID, story {story_dict["i"]}')
+    ax.set(ylabel=f'RID, story {story_dict["i"]}')
     ax.grid(which='both', linewidth=0.30)
     plt.legend()
     plt.show()
@@ -207,7 +207,7 @@ def main():
         label='empirical',
     )
     sns.ecdfplot(
-        rid_sample_df.reorder_levels([1, 0]).loc[hz, 'i'],
+        rid_sample_df.loc[hz, story_dict['i']],
         label='conditional Weibull',
     )
     sns.ecdfplot(
