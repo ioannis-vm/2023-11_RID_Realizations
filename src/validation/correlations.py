@@ -147,8 +147,12 @@ def main():
         label='empirical',
     )
     ax.scatter(
-        rid_sample_df.xs(story_dict['i'], level='story', axis=1).stack().values[::10],
-        rid_sample_df.xs(story_dict['j'], level='story', axis=1).stack().values[::10],
+        rid_sample_df.xs(story_dict['i'], level='story', axis=1)
+        .stack()
+        .values[::10],
+        rid_sample_df.xs(story_dict['j'], level='story', axis=1)
+        .stack()
+        .values[::10],
         edgecolor='red',
         facecolor='white',
         alpha=0.50,
@@ -160,8 +164,7 @@ def main():
     ax.set(ylabel=f'RID, story {story_dict["j"]}')
     ax.grid(which='both', linewidth=0.30)
     plt.legend()
-    plt.savefig('/tmp/pid_rid_yes_correlation.png', dpi=600)
-    # plt.show()
+    plt.show()
 
     # plot RID-PID correlation
     plt.close()
