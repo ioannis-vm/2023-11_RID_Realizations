@@ -6,3 +6,5 @@ todo.org
 /results
 /data
 /doc/activity_log.org
+/src/notebooks/.ipynb_checkpoints/
+/output/
