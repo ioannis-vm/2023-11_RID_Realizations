@@ -1,5 +1,5 @@
 """
-Fit all models to the data and store the parameters.
+Experimental fitting with simplified models
 """
 
 import numpy as np
@@ -226,6 +226,7 @@ def main():
     # Confirms:
     # - that the pdf looks the same when plotted in Mathematica
     pid = np.linspace(1e-8, 0.08, 1000)
+    # rid = pid
     # pdf_values = model.evaluate_pdf(rid, pid)
     # fig, ax = plt.subplots()
     # ax.plot(rid, pdf_values)
