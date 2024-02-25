@@ -53,12 +53,13 @@ def main():
 
     model = Model_1_Weibull()
     model.add_data(pid_vals, rid_vals)
-    model.censoring_limit = 0.0005
+    model.censoring_limit = 0.0025
     model.fit(method='mle')
 
     _, ax = plt.subplots()
     model.plot_model(ax)
     ax.set(xlim=(-0.005, 0.025), ylim=(-0.005, 0.06))
+    ax.axvline(x=model.censoring_limit, linewidth=0.30, color='black')
     plt.show()
 
     # plot a slice

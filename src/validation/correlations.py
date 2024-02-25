@@ -44,7 +44,7 @@ def main():
 
         model = models.Model_1_Weibull()
         model.add_data(analysis_pid_vals, analysis_rid_vals)
-        model.censoring_limit = 0.005
+        model.censoring_limit = 0.0025
         model.fit(method='mle')
 
         model_dict[index] = model

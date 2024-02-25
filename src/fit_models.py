@@ -62,8 +62,8 @@ def obtain_parameters(method, data_gathering_approach):
 
         model = model_classes[method]()
         model.add_data(pid_vals, rid_vals)
-        model.censoring_limit = 0.0005
-        model.fit(method='mle')
+        model.censoring_limit = 0.0025
+        model.fit(method='quantiles')
         loglikelihood.append(-model.fit_meta.fun)
         parameters.append(model.parameters)
         model_objects[the_case] = model

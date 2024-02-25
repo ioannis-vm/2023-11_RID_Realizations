@@ -163,8 +163,7 @@ class Model:
         # update the parameters
         self.parameters = parameters
         density = self.evaluate_pdf(self.raw_rid, self.raw_pid, self.censoring_limit)
-        weights = lognormal_fragility_weight(self.raw_rid, self.censoring_limit)
-        negloglikelihood = -np.sum(weights * np.log(density))
+        negloglikelihood = -np.sum(np.log(density))
         return negloglikelihood
 
     def get_quantile_objective(self, parameters):
