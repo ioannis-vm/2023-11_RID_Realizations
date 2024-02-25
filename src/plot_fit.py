@@ -48,12 +48,14 @@ def generate_figure(system, stories, rc, model_df, method, data_gathering_approa
     axs = axs.reshape(3, -1)
     for i_col in range(num_columns):
         for i_row in range(num_rows):
-            group = int(i_col / 2)
-            story = str(i_row + 1 + 3 * group)
             if data_gathering_approach == 'separate_directions':
+                group = int(i_col / 2)
+                story = str(i_row + 1 + 3 * group)
                 direction = str(i_col % 2 + 1)
                 model = df[(story, direction)]
             else:
+                group = i_col
+                story = str(i_row + 1 + 3 * group)
                 model = df[story]
             model.plot_model(axs[i_row, i_col])
             text = '\n'.join(
@@ -62,7 +64,7 @@ def generate_figure(system, stories, rc, model_df, method, data_gathering_approa
                     for x, y in zip(model.parameters, model.parameter_names)
                 ]
             )
-            text += '\n' + f'LL={-model.fit_meta.fun:.2f}'
+            text += '\n' + f'LL={-model.fit_meta.fun:.2e}'
             axs[i_row, i_col].text(
                 0.98,
                 0.02,
@@ -112,6 +114,13 @@ def generate_figure(system, stories, rc, model_df, method, data_gathering_approa
         store_info(
             f'results/figures/{data_gathering_approach}'
             f'/{method}/fit_{system}_{stories}_{rc}.pdf',
+            [models_path],
+        )
+    )
+    plt.savefig(
+        store_info(
+            f'results/figures/{data_gathering_approach}'
+            f'/{method}/fit_{system}_{stories}_{rc}.svg',
             [models_path],
         )
     )
@@ -178,4 +187,4 @@ def main(parallel=False):
 
 
 if __name__ == '__main__':
-    main(parallel=True)
+    main(parallel=False)
