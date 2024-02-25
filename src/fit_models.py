@@ -52,7 +52,6 @@ def obtain_parameters(method, data_gathering_approach):
     model_classes = {
         'weibull_bilinear': models.Model_1_Weibull,
         'gamma_bilinear': models.Model_2_Gamma,
-        'beta_bilinear': models.Model_3_Beta,
     }
     for the_case in cases:
         case_df = df[the_case].dropna()
@@ -105,7 +104,7 @@ def main():
     for method, data_gathering_approach in tqdm.tqdm(
         list(
             product(
-                ('weibull_bilinear', 'gamma_bilinear', 'beta_bilinear'),
+                ('weibull_bilinear', 'gamma_bilinear',),
                 ('separate_directions', 'bundled_directions'),
             )
         )

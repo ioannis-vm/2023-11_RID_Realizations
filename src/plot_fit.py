@@ -118,8 +118,8 @@ def generate_figure(system, stories, rc, model_df, method, data_gathering_approa
     plt.close()
 
 
-def main(parallel=True):
-    methods = ('weibull_bilinear', 'gamma_bilinear', 'beta_bilinear')
+def main(parallel=False):
+    methods = ('weibull_bilinear', 'gamma_bilinear',)
     data_gathering_approaches = ('separate_directions', 'bundled_directions')
 
     model_dfs = {}
