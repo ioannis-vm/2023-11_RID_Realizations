@@ -3,7 +3,6 @@ Produce plots to visually assess the quality of the fit to PID-RID
 data for all considered archetypes.
 """
 
-import concurrent.futures
 from itertools import product
 import pickle
 import tqdm
