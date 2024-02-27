@@ -69,7 +69,7 @@ def obtain_parameters(
         model = model_classes[method]()
         model.add_data(pid_vals, rid_vals)
         model.censoring_limit = 0.0025
-        model.fit(method='quantiles')
+        model.fit(method='mle')
         loglikelihood.append(-model.fit_meta.fun)
         parameters.append(model.parameters)
         model_objects[the_case] = model
