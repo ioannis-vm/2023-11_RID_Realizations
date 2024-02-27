@@ -127,7 +127,7 @@ def generate_figure(system, stories, rc, model_df, method, data_gathering_approa
     plt.close()
 
 
-def main(parallel=False):
+def main():
     methods = ('weibull_bilinear', 'gamma_bilinear',)
     data_gathering_approaches = ('separate_directions', 'bundled_directions')
 
@@ -171,19 +171,8 @@ def main(parallel=False):
                 data_gathering_approach,
             )
         )
-    if parallel is False:
-        # in series
-        for args in tqdm.tqdm(args_list):
-            generate_figure(*args)
-    else:
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            futures = {
-                executor.submit(generate_figure, *args): args for args in args_list
-            }
-            for future in tqdm.tqdm(
-                concurrent.futures.as_completed(futures), total=len(args_list)
-            ):
-                _ = future.result()
+    for args in tqdm.tqdm(args_list):
+        generate_figure(*args)
 
 
 if __name__ == '__main__':
