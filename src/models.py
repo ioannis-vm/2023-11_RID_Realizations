@@ -180,10 +180,10 @@ class Model:
         # calculate the model's RID|PID quantiles
         if self.rolling_pid is None:
             self.calculate_rolling_quantiles()
-            model_pid = self.rolling_pid
-            model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
-            model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
-            model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
+        model_pid = self.rolling_pid
+        model_rid_50 = self.evaluate_inverse_cdf(0.50, model_pid)
+        model_rid_20 = self.evaluate_inverse_cdf(0.20, model_pid)
+        model_rid_80 = self.evaluate_inverse_cdf(0.80, model_pid)
 
         loss = (
             (self.rolling_rid_50 - model_rid_50).T

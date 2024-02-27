@@ -24,7 +24,7 @@ def load_dataset(path='data/edp.parquet') -> tuple[pd.Series, dict[str, str]]:
     return series, units
 
 
-def remove_collapse(data: pd.Series, drift_threshold: float = 0.10) -> pd.DataFrame:
+def remove_collapse(data: pd.Series, drift_threshold: float = 0.10) -> pd.Series:
     """
     Remove collapse instances
     """
@@ -50,12 +50,12 @@ def remove_collapse(data: pd.Series, drift_threshold: float = 0.10) -> pd.DataFr
         .stack()
         .reorder_levels(initial_level_order)
     )
-    assert isinstance(df_no_collapse, pd.DataFrame)
 
+    assert isinstance(df_no_collapse, pd.Series)
     return df_no_collapse
 
 
-def only_drifts(df_no_collapse: pd.DataFrame) -> pd.DataFrame:
+def only_drifts(df_no_collapse: pd.Series) -> pd.DataFrame:
     filtered_df = (
         df_no_collapse[
             df_no_collapse.index.get_level_values('edp').isin(("PID", "RID"))

@@ -13,10 +13,8 @@ from src.handle_data import only_drifts
 from src.util import store_info
 
 
-def get_all_cases(
-    data_gathering_approach: str
-) -> list[list]:
-    cases = []
+def get_all_cases(data_gathering_approach: str) -> list[tuple[str, ...]]:
+    cases: list[tuple[str, ...]] = []
     if data_gathering_approach == 'separate_directions':
         for sys, st, rc, dr in product(
             ('smrf', 'scbf', 'brbf'),  # system
@@ -26,8 +24,9 @@ def get_all_cases(
         ):
             for lv in range(1, int(st) + 1):
                 lv = int(lv)
-                cases.append([sys, st, rc, str(lv), dr])
+                cases.append((sys, st, rc, str(lv), dr))
     elif data_gathering_approach == 'bundled_directions':
+
         for sys, st, rc in product(
             ('smrf', 'scbf', 'brbf'),  # system
             ('3', '6', '9'),  # number of stories
@@ -35,7 +34,7 @@ def get_all_cases(
         ):
             for lv in range(1, int(st) + 1):
                 lv = int(lv)
-                cases.append([sys, st, rc, str(lv)])
+                cases.append((sys, st, rc, str(lv)))
     else:
         raise ValueError(
             f'Invalid data_gathering_approach: {data_gathering_approach}'
@@ -59,7 +58,7 @@ def obtain_parameters(
         'gamma_bilinear': models.Model_2_Gamma,
     }
     for the_case in cases:
-        case_df: pd.DataFrame = df[the_case].dropna()
+        case_df: pd.DataFrame = df[the_case].dropna()  # type: ignore
         if data_gathering_approach == 'bundled_directions':
             stack = case_df.stack(level=0)
             assert isinstance(stack, pd.DataFrame)
