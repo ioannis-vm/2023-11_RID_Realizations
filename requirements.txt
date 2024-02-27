@@ -1,8 +1,10 @@
 numpy==1.26.3
 pandas==1.5.3
+pandas-stubs==1.5.3.230214
 pyarrow==14.0.2
 matplotlib==3.8.2
 seaborn==0.13.1
+types-seaborn==0.13.2.20240205
 flake8==7.0.0
 pylint==3.0.3
 autopep8==2.0.4

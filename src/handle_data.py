@@ -8,7 +8,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def load_dataset(path='data/edp.parquet'):
+def load_dataset(path='data/edp.parquet') -> tuple[pd.Series, dict[str, str]]:
     """
     Load the analysis results and their units.
     """
@@ -17,25 +17,25 @@ def load_dataset(path='data/edp.parquet'):
 
     # turn back into a pd.Series
     # (was stored as DataFrame to use df.to_parquet())
-    df = df['value']
+    series = df['value']
 
     units = {'PFA': 'g', 'PID': 'rad', 'PFV': 'in/s', 'PVb': 'lb'}
 
-    return df, units
+    return series, units
 
 
-def remove_collapse(df, drift_threshold=0.10):
+def remove_collapse(data: pd.Series, drift_threshold: float = 0.10) -> pd.DataFrame:
     """
     Remove collapse instances
     """
 
     # drift_threshold = 0.10  # that's 10%
 
-    initial_level_order = df.index.names
+    initial_level_order = data.index.names
 
     # shuffle columns/rows to get a different view
     # (this doesn't create a copy)
-    df_unstack = df.unstack(4).unstack(4).unstack(4)
+    df_unstack = data.unstack(4).unstack(4).unstack(4)
 
     # globally remove cmp-loc-dir entries that correspond to a
     # collapse
@@ -43,14 +43,6 @@ def remove_collapse(df, drift_threshold=0.10):
     not_collapse_bool_index = ~pid_df.apply(any, axis=1)
 
     df_unstack_no_collapse = df_unstack.loc[not_collapse_bool_index, :]
-    df_unstack = (
-        df.unstack()
-        .unstack(0)
-        .unstack(0)
-        .unstack(0)
-        .unstack(0)
-        .reorder_levels(('system', 'stories', 'rc', 'hz', 'gm'), axis=1)
-    )
 
     df_no_collapse = (
         df_unstack_no_collapse.stack()
@@ -58,11 +50,12 @@ def remove_collapse(df, drift_threshold=0.10):
         .stack()
         .reorder_levels(initial_level_order)
     )
+    assert isinstance(df_no_collapse, pd.DataFrame)
 
     return df_no_collapse
 
 
-def only_drifts(df_no_collapse):
+def only_drifts(df_no_collapse: pd.DataFrame) -> pd.DataFrame:
     filtered_df = (
         df_no_collapse[
             df_no_collapse.index.get_level_values('edp').isin(("PID", "RID"))
@@ -74,10 +67,11 @@ def only_drifts(df_no_collapse):
         .unstack(2)
         .unstack(1)
     )
+    assert isinstance(filtered_df, pd.DataFrame)
     return filtered_df
 
 
-def scatter_pid_rid(filtered_df):
+def scatter_pid_rid(filtered_df: pd.DataFrame) -> None:
     # we fit each archetype-story-direction individually
     archetype = ("smrf", "9", "ii", "2", "2")
     # archetype = ("smrf", "3", "ii")
@@ -96,6 +90,6 @@ def scatter_pid_rid(filtered_df):
         hue=archetype_df.index.get_level_values("hz"),
         ax=ax,
     )
-    ax.set(xlim=(-0.005, 0.04), ylim=(-0.005, 0.08))
-    ax.grid(which="both", linewidth=0.30)
+    ax.set(xlim=(-0.005, 0.04), ylim=(-0.005, 0.08))  # type: ignore
+    ax.grid(which="both", linewidth=0.30)  # type: ignore
     plt.show()

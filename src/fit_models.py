@@ -13,7 +13,9 @@ from src.handle_data import only_drifts
 from src.util import store_info
 
 
-def get_all_cases(data_gathering_approach):
+def get_all_cases(
+    data_gathering_approach: str
+) -> list[list]:
     cases = []
     if data_gathering_approach == 'separate_directions':
         for sys, st, rc, dr in product(
@@ -24,7 +26,7 @@ def get_all_cases(data_gathering_approach):
         ):
             for lv in range(1, int(st) + 1):
                 lv = int(lv)
-                cases.append((sys, st, rc, str(lv), dr))
+                cases.append([sys, st, rc, str(lv), dr])
     elif data_gathering_approach == 'bundled_directions':
         for sys, st, rc in product(
             ('smrf', 'scbf', 'brbf'),  # system
@@ -33,7 +35,7 @@ def get_all_cases(data_gathering_approach):
         ):
             for lv in range(1, int(st) + 1):
                 lv = int(lv)
-                cases.append((sys, st, rc, str(lv)))
+                cases.append([sys, st, rc, str(lv)])
     else:
         raise ValueError(
             f'Invalid data_gathering_approach: {data_gathering_approach}'
@@ -42,7 +44,10 @@ def get_all_cases(data_gathering_approach):
     return cases
 
 
-def obtain_parameters(method, data_gathering_approach):
+def obtain_parameters(
+    method: str,
+    data_gathering_approach: str,
+) -> None:
     df = only_drifts(remove_collapse(load_dataset()[0]))
     cases = get_all_cases(data_gathering_approach)
     parameters = []
@@ -54,9 +59,11 @@ def obtain_parameters(method, data_gathering_approach):
         'gamma_bilinear': models.Model_2_Gamma,
     }
     for the_case in cases:
-        case_df = df[the_case].dropna()
+        case_df: pd.DataFrame = df[the_case].dropna()
         if data_gathering_approach == 'bundled_directions':
-            case_df = case_df.stack(level=0)
+            stack = case_df.stack(level=0)
+            assert isinstance(stack, pd.DataFrame)
+            case_df = stack
         rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
         pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
 
@@ -100,11 +107,14 @@ def obtain_parameters(method, data_gathering_approach):
         pickle.dump(model_objects, f)
 
 
-def main():
+def main() -> None:
     for method, data_gathering_approach in tqdm.tqdm(
         list(
             product(
-                ('weibull_bilinear', 'gamma_bilinear',),
+                (
+                    'weibull_bilinear',
+                    'gamma_bilinear',
+                ),
                 ('separate_directions', 'bundled_directions'),
             )
         )

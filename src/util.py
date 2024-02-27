@@ -14,7 +14,7 @@ import git
 # pylint:disable=cell-var-from-loop
 
 
-def calculate_input_file_info(file_list):
+def calculate_input_file_info(file_list: list[str]) -> str:
     """
     Calculate a SHA256 checksum for each file in the file_list.
     Returns a descriptive string including file name,
@@ -37,7 +37,7 @@ def calculate_input_file_info(file_list):
         last_modified_date = datetime.fromtimestamp(file_stats.st_mtime).strftime(
             '%Y-%m-%d %H:%M:%S'
         )
-        file_size = file_stats.st_size
+        file_size = float(file_stats.st_size)
 
         # Convert size to a human-friendly format
         suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -60,7 +60,9 @@ def calculate_input_file_info(file_list):
     return "\n".join(file_info_strings)
 
 
-def store_info(path, input_data_paths=None, seeds=None):
+def store_info(
+    path: str, input_data_paths: list[str] = [], seeds: list[int] = []
+) -> str:
     """
     Store metadata enabling reproducibility of results
     """
