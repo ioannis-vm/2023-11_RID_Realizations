@@ -199,7 +199,8 @@ class Model:
     def generate_rid_samples(self, pid_samples: npt.NDArray) -> npt.NDArray:
         if self.uniform_sample is None:
             self.uniform_sample = np.random.uniform(0.00, 1.00, len(pid_samples))
-            rid_samples = self.evaluate_inverse_cdf(self.uniform_sample, pid_samples)
+
+        rid_samples = self.evaluate_inverse_cdf(self.uniform_sample, pid_samples)
 
         self.sim_pid = pid_samples
         self.sim_rid = rid_samples
