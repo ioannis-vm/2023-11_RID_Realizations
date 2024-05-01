@@ -9,7 +9,6 @@ RID|PID models
 import numpy as np
 import numpy.typing as npt
 import scipy as sp
-from scipy.interpolate import interp1d
 from scipy.special import erfc
 from scipy.special import erfcinv
 from scipy.optimize import minimize
