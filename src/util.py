@@ -2,6 +2,7 @@
 Utility functions for the project
 """
 
+from __future__ import annotations
 import os
 import sys
 import socket
@@ -61,7 +62,7 @@ def calculate_input_file_info(file_list: list[str]) -> str:
 
 
 def store_info(
-    path: str, input_data_paths: list[str] = [], seeds: list[int] = []
+    path: (str | None) = None, input_data_paths: list[str] = [], seeds: list[int] = []
 ) -> str:
     """
     Store metadata enabling reproducibility of results
@@ -71,7 +72,7 @@ def store_info(
     metadata_content = f"Time: {timestamp}\n"
 
     # Check if the file already exists
-    if os.path.isfile(path):
+    if path and os.path.isfile(path):
         timestamp_for_backup = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_folder = os.path.join(
             os.path.dirname(path), 'replaced_on_' + timestamp_for_backup
@@ -113,9 +114,14 @@ def store_info(
     if seeds:
         metadata_content += f'Random Seeds: {seeds}\n'
 
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-
-    with open(path + '.info', 'w', encoding='utf-8') as file:
-        file.write(metadata_content)
-
-    return path
+    if path:
+        # Write contents to a file and return the original path.
+        # Intended use: saving files directly on the file system
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path + '.info', 'w', encoding='utf-8') as file:
+            file.write(metadata_content)
+        return path
+    else:
+        # Otherwise retgurn the metadata as a string
+        # Intended use: saving metadata in a database
+        return metadata_content
