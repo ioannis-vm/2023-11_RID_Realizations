@@ -12,3 +12,5 @@ todo.org
 /output/
 /.trash/
 /doc/notes/
+.ipynb_checkpoints/
+*.ipynb
