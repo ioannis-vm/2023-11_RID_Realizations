@@ -6,6 +6,9 @@ RID|PID models
 # pylint:disable=no-name-in-module
 
 
+from typing import Optional
+from typing import Literal
+from typing import Any
 import numpy as np
 import numpy.typing as npt
 import scipy as sp
@@ -14,62 +17,8 @@ from scipy.special import erfcinv
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import Optional
-from typing import Literal
-from typing import Any
 
 np.set_printoptions(formatter={'float': '{:0.5f}'.format})
-
-
-def lognormal_fragility_weight(
-    rid: npt.NDArray, censoring_limit=None, delta=0.01, beta=0.60
-) -> npt.NDArray:
-    """
-    Determine MLE weights based on the RID value, considering the
-    lognormal residual drift fragility curve for which the generated
-    RIDs will be the input. delta is the median and beta the
-    dispersion of the fragility curve.  We use the shape of its
-    density function, scaled to a maximum weight, and shifted in the Y
-    axis to have a weight of 1 far away from the median.
-    """
-    max_scaling = 5.00
-
-    # scaling_factors = (max_scaling - 1.00) * (
-    #     delta
-    #     / (np.exp((beta**4 + np.log(rid / delta) ** 2) / (2 * beta**2)) * rid)
-    # ) + 1.00
-
-    exponent = (beta**4 + np.log(rid / delta) ** 2) / (2 * beta**2)
-    scaling_factors = np.empty_like(rid)
-    # 700 is a rough threshold to avoid overflow in exp
-    #   In this case the function evaluates to 1.00
-    scaling_factors[exponent > 700.00] = 1.00
-    scaling_factors[exponent <= 700.00] = (max_scaling - 1.00) * (
-        delta / (np.exp(exponent[exponent <= 700.00]) * rid[exponent <= 700.00])
-    ) + 1.00
-
-    # # also account for the marginal distribution of the RIDs we want
-    # # each potential RID value to have the same baseline weight
-    # # regardless of the number of data points in that neighborhood
-
-    # if censoring_limit:
-    #     bins = np.concatenate(
-    #         (
-    #             np.array((0.00, censoring_limit)),
-    #             np.linspace(censoring_limit, np.max(rid), 24),
-    #         )
-    #     )
-    # else:
-    #     bins = (np.linspace(0.00, np.max(censoring_limit), 24),)
-    # hist_bin_vals = np.histogram(rid, bins)[0]
-    # hist_fun = interp1d(
-    #     bins[:-1], hist_bin_vals, kind='previous', fill_value='extrapolate'
-    # )
-    # hist_vals = hist_fun(rid)
-
-    # scaling_factors = scaling_factors / ((hist_vals - 1.00)/50.00 + 1.00)
-
-    return scaling_factors
 
 
 class Model:

@@ -121,7 +121,6 @@ def store_info(
         with open(path + '.info', 'w', encoding='utf-8') as file:
             file.write(metadata_content)
         return path
-    else:
-        # Otherwise retgurn the metadata as a string
-        # Intended use: saving metadata in a database
-        return metadata_content
+    # Otherwise retgurn the metadata as a string
+    # Intended use: saving metadata in a database
+    return metadata_content

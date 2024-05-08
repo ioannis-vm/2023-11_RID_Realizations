@@ -1,12 +1,7 @@
 # Imports
-from pathlib import Path
-import os
-from itertools import product
-from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from src import models
 
 # import seaborn as sns
@@ -18,7 +13,9 @@ ymin, ymax = -0.00499, 0.0699  # pid
 
 
 df = pd.read_parquet('data/edp_extended_cms.parquet')
-df.index = df.index.reorder_levels(['system', 'stories', 'rc', 'dir', 'edp', 'hz', 'gm', 'loc'])  # type: ignore
+df.index = df.index.reorder_levels(
+    ['system', 'stories', 'rc', 'dir', 'edp', 'hz', 'gm', 'loc']
+)
 df = df.sort_index()
 
 
@@ -79,8 +76,6 @@ data_y = get_pid_rid_pairs(system, stories, rc, 'y')
 data = pd.concat((data_x, data_y))
 
 
-
-
 fig, ax = plt.subplots(figsize=(3, 3))
 
 # ax.fill_between(
@@ -139,7 +134,7 @@ ax.set(
 ax.grid(which='both')
 fig.tight_layout()
 # plt.show()
-plt.savefig(f'/tmp/fig.png', dpi=600)
+plt.savefig('/tmp/fig.png', dpi=600)
 
 # data_sub = data[data['PID'] < slice_loc + slice_width]
 # data_sub = data_sub[data_sub['PID'] > slice_loc - slice_width]
@@ -158,4 +153,3 @@ plt.savefig(f'/tmp/fig.png', dpi=600)
 # fig.tight_layout()
 # # plt.show()
 # plt.savefig(f'/tmp/{system}_{stories}_{rc}_cdf.png', dpi=600)
-

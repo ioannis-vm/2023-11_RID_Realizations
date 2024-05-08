@@ -60,7 +60,9 @@ sns.set_style("whitegrid")
 
 # %%
 df = pd.read_parquet('data/edp_extended_cs.parquet')
-df.index = df.index.reorder_levels(['system', 'stories', 'rc', 'dir', 'edp', 'hz', 'gm', 'loc'])  # type: ignore
+df.index = df.index.reorder_levels(
+    ['system', 'stories', 'rc', 'dir', 'edp', 'hz', 'gm', 'loc']
+)
 df = df.sort_index()
 
 
@@ -227,7 +229,7 @@ for rc, stories, system in product(
 # %% [markdown]
 """
 Note: The plots are only for the x direction, but the y direction is
-    very similar.  
+    very similar.
 **Comment on the results**:
 - Considering the results as a whole, for taller archetypes usually
     the maximum PID occurs at a different floor than the maximum PID.

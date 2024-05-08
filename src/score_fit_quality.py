@@ -2,16 +2,17 @@
 Assign a numeric score to the fit qualtiy of each model
 
 """
+
 from itertools import product
 import pickle
 import numpy as np
 import scipy as sp
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 from src.handle_data import load_dataset
 from src.handle_data import remove_collapse
 from src.handle_data import only_drifts
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 
 def load_analysis_data() -> pd.DataFrame:
@@ -104,7 +105,7 @@ def get_p_value(simulated_rid: np.ndarray, analysis_rid: np.ndarray) -> float:
 
 
 def plot_cdfs(simulated_rid, analysis_rid):
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     sns.ecdfplot(analysis_rid, ax=ax)
     sns.ecdfplot(simulated_rid, ax=ax)
     ax.axvline(x=0.01)
@@ -147,9 +148,9 @@ for index in product(
     ('smrf', 'scbf', 'brbf'),
     ('3', '6', '9'),
     ('ii', 'iv'),
-    [f'{i+1}' for i in range(9)],
+    [f'{i + 1}' for i in range(9)],
     ('1', '2'),
-    [f'{i+1}' for i in range(8)],
+    [f'{i + 1}' for i in range(8)],
 ):
     (
         method,
@@ -216,7 +217,7 @@ plt.show()
 
 # Determining the best performing distribution in terms of the
 # difference in probabilyt of excessive drift
-result_df['p_diff'] = (result_df['p2'] - result_df['p1'])
+result_df['p_diff'] = result_df['p2'] - result_df['p1']
 filtered_df = result_df['p_diff'].unstack(0)
 filtered_df[filtered_df.index.get_level_values('system') == 'brbf'].describe()
 # fig, ax = plt.subplots()

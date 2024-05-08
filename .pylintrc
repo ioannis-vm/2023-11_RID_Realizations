@@ -86,13 +86,14 @@ disable=raw-checker-failed,
         useless-suppression,
         deprecated-pragma,
         use-symbolic-message-instead,
-		use-dict-literal,
-		similarities,
-		invalid-name,
-		invalid-unary-operand-type,
-		redefined-outer-name,
-		singleton-comparison,
-		missing-function-docstring
+	use-dict-literal,
+	similarities,
+	invalid-name,
+	invalid-unary-operand-type,
+	redefined-outer-name,
+	singleton-comparison,
+	missing-function-docstring,
+	dangerous-default-value
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

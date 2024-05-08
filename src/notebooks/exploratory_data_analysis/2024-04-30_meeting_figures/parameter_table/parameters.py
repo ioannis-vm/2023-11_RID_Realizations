@@ -1,12 +1,9 @@
 # Imports
-from pathlib import Path
-import os
 from itertools import product
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from src import models
 
 # import seaborn as sns
@@ -18,7 +15,9 @@ ymin, ymax = -0.00499, 0.0699  # pid
 
 
 df = pd.read_parquet('data/edp_extended_cms.parquet')
-df.index = df.index.reorder_levels(['system', 'stories', 'rc', 'dir', 'edp', 'hz', 'gm', 'loc'])  # type: ignore
+df.index = df.index.reorder_levels(
+    ['system', 'stories', 'rc', 'dir', 'edp', 'hz', 'gm', 'loc']
+)
 df = df.sort_index()
 
 
@@ -137,15 +136,21 @@ for system, stories, rc in tqdm(
     model_rid_80 = fema_model.evaluate_inverse_cdf(0.80, model_pid)
 
     ax.plot(
-        model_rid_50, model_pid, 'C1', linewidth=1.5, label=f'FEMA P-58, $\\delta_y$={yield_drift[system]}%', zorder=5
+        model_rid_50,
+        model_pid,
+        'C1',
+        linewidth=1.5,
+        label=f'FEMA P-58, $\\delta_y$={yield_drift[system]}%',
+        zorder=5,
     )
     ax.plot(model_rid_20, model_pid, 'C1', linestyle='dashed', zorder=5)
     ax.plot(model_rid_80, model_pid, 'C1', linestyle='dashed', zorder=5)
 
     ax.axvline(x=0.0025, color='black', linestyle='dashed')
 
+    assert model.parameters is not None
     text = ''
-    text += f'$\\theta_0$ = {model.parameters[0]*100.00:.2f}%\n'
+    text += f'$\\theta_0$ = {model.parameters[0] * 100.00:.2f}%\n'
     text += f'$\\theta_1$ = {model.parameters[1]:.2f}\n'
     text += f'$\\theta_2$ = {model.parameters[2]:.2f}\n'
     ax.text(0.95, 0.15, text, ha='right', va='center', transform=ax.transAxes)
