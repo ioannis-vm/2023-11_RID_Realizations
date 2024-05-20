@@ -68,27 +68,3 @@ def only_drifts(df_no_collapse: pd.Series) -> pd.DataFrame:
     )
     assert isinstance(filtered_df, pd.DataFrame)
     return filtered_df
-
-
-def scatter_pid_rid(filtered_df: pd.DataFrame) -> None:
-    # we fit each archetype-story-direction individually
-    archetype = ("smrf", "9", "ii", "2", "2")
-    # archetype = ("smrf", "3", "ii")
-
-    archetype_df = filtered_df[archetype]
-
-    # archetype_df = filtered_df
-
-    # archetype_df = archetype_df.stack(0).stack(0).stack(0).stack(0).stack(0)
-
-    _, ax = plt.subplots()
-    sns.scatterplot(
-        data=archetype_df,
-        x="RID",
-        y="PID",
-        hue=archetype_df.index.get_level_values("hz"),
-        ax=ax,
-    )
-    ax.set(xlim=(-0.005, 0.04), ylim=(-0.005, 0.08))  # type: ignore
-    ax.grid(which="both", linewidth=0.30)  # type: ignore
-    plt.show()
