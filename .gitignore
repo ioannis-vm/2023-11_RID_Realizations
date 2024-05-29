@@ -14,3 +14,5 @@ todo.org
 /doc/notes/
 .ipynb_checkpoints/
 *.ipynb
+/.ropeproject/
+/extra/RID_Project_Colab/
