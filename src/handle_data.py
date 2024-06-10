@@ -3,11 +3,9 @@ Functions to process the input data
 """
 
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 
-def load_dataset(path='data/edp.parquet') -> tuple[pd.Series, dict[str, str]]:
+def load_dataset(path='data/edp_cs.parquet') -> tuple[pd.Series, dict[str, str]]:
     """
     Load the analysis results and their units.
     """

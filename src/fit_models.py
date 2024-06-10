@@ -20,7 +20,7 @@ def get_all_cases(data_gathering_approach: str) -> list[tuple[str, ...]]:
             ('smrf', 'scbf', 'brbf'),  # system
             ('3', '6', '9'),  # number of stories
             ('ii', 'iv'),  # risk category
-            ('1', '2'),  # direction (X, Y)
+            ('x', 'y'),  # direction (X, Y)
         ):
             for lv in range(1, int(st) + 1):
                 lv = int(lv)
@@ -60,7 +60,7 @@ def obtain_parameters(
     for the_case in cases:
         case_df: pd.DataFrame = df[the_case].dropna()  # type: ignore
         if data_gathering_approach == 'bundled_directions':
-            stack = case_df.stack(level=0)
+            stack = case_df.stack(level=0, future_stack=True)
             assert isinstance(stack, pd.DataFrame)
             case_df = stack
         rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
