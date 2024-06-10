@@ -1,3 +1,8 @@
+"""
+Figures to demonstrate the steps involved in fitting a model.
+
+"""
+
 # Imports
 import numpy as np
 import pandas as pd

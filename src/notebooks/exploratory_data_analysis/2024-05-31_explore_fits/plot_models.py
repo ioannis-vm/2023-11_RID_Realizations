@@ -6,14 +6,14 @@ Explore fitting various models to the data.
 from itertools import product
 from collections import defaultdict
 from scipy.stats import norm
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 import plotly.subplots as sp
 from src import models
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 
 def get_pid_rid_pairs(df, system, stories, rc, story):
@@ -101,7 +101,7 @@ def get_pid_rid_pairs(df, system, stories, rc, story):
         pairs.loc[pairs['StoryDiff'] == 1, 'StoryDiffText'] = '1--2 stories'
         pairs.loc[pairs['StoryDiff'] == 2, 'StoryDiffText'] = '1--2 stories'
         pairs.loc[pairs['StoryDiff'] > 2, 'StoryDiffText'] = '>2 stories'
-        for thing in {'PIDStory', 'RIDStory'}:
+        for thing in ('PIDStory', 'RIDStory'):
             pairs[f'{thing}Text'] = 'Intermediate stories'
             if stories == '3':
                 pairs.loc[pairs[thing] <= 2, f'{thing}Text'] = 'First 2 stories'
@@ -111,21 +111,19 @@ def get_pid_rid_pairs(df, system, stories, rc, story):
 
         return pairs
 
-    else:
+    # filter story
+    pairs = pairs_all_stories.iloc[
+        :, pairs_all_stories.columns.get_level_values('loc') == story
+    ]
+    pairs.columns = pairs.columns.droplevel('loc')
 
-        # filter story
-        pairs = pairs_all_stories.iloc[
-            :, pairs_all_stories.columns.get_level_values('loc') == story
-        ]
-        pairs.columns = pairs.columns.droplevel('loc')
+    pairs = pairs.dropna(how='any')
+    rsns = pairs['rsn']['PID']
+    scaling = pairs['scaling_factor']['PID']
+    pairs = pairs.loc[:, 'value']
+    pairs = pairs.reset_index()
 
-        pairs = pairs.dropna(how='any')
-        rsns = pairs['rsn']['PID']
-        scaling = pairs['scaling_factor']['PID']
-        pairs = pairs.loc[:, 'value']
-        pairs = pairs.reset_index()
-
-        return pairs, rsns, scaling
+    return pairs, rsns, scaling
 
 
 def generate_plot(
@@ -444,8 +442,6 @@ def main():
 
     system, stories, rc, story = 'brbf', '9', 'iv', 'max-max'
 
-    from itertools import product
-
     for rc, system, stories in product(
         ('ii', 'iv'), ('smrf', 'scbf', 'brbf'), ('3', '6', '9')
     ):
@@ -630,6 +626,7 @@ def get_parameter_table():
             (model_rid_80, model_pid, 1.5, False),
         ]
 
+        # pylint: disable=cell-var-from-loop
         def add_traces(data, color, name, legendgroup):
             for x, y, width, showlegend in data:
                 fig.add_trace(
@@ -645,6 +642,7 @@ def get_parameter_table():
                     row=1,
                     col=1,
                 )
+        # pylint: enable=cell-var-from-loop
 
         add_traces(empirical_data, 'black', 'Empirical rolling quantiles', 'erq')
         add_traces(cw_data, c0, 'Conditional Weibull', 'cw')

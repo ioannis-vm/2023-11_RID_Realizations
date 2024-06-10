@@ -36,6 +36,7 @@ floors.
 """
 
 # %%
+# pylint: disable=wrong-import-position
 # Imports
 from pathlib import Path
 import os
@@ -124,7 +125,7 @@ def get_pid_rid_pairs(system, stories, rc, direction):
     pairs.loc[pairs['StoryDiff'] == 1, 'StoryDiffText'] = '1--2 stories'
     pairs.loc[pairs['StoryDiff'] == 2, 'StoryDiffText'] = '1--2 stories'
     pairs.loc[pairs['StoryDiff'] > 2, 'StoryDiffText'] = '>2 stories'
-    for thing in {'PIDStory', 'RIDStory'}:
+    for thing in ('PIDStory', 'RIDStory'):
         pairs[f'{thing}Text'] = 'Intermediate stories'
         if stories == '3':
             pairs.loc[pairs[thing] <= 2, f'{thing}Text'] = 'First 2 stories'

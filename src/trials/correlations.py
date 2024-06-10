@@ -3,6 +3,8 @@ Visualize correlations of variables with different model fitting
 approaches
 """
 
+# pylint: disable=import-error
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -42,12 +44,12 @@ def main():
         analysis_rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
         analysis_pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
 
-        model = models.Model_1_Weibull()
-        model.add_data(analysis_pid_vals, analysis_rid_vals)
-        model.censoring_limit = 0.0025
-        model.fit(method='mle')
+        model_str = models.Model_1_Weibull()
+        model_str.add_data(analysis_pid_vals, analysis_rid_vals)
+        model_str.censoring_limit = 0.0025
+        model_str.fit(method='mle')
 
-        model_dict[index] = model
+        model_dict[index] = model_str
 
     # simulate data
     demand_sample_dict = {}
@@ -90,12 +92,14 @@ def main():
         assert num_samples == len(demand_sample['PID', story_dict['j'], '1'].values)
         uniform_sample = np.random.uniform(0.00, 1.00, num_samples)
         # uniform_sample = None --> No RID-RID correlation
-        for key in story_dict.keys():
+        # pylint: disable=consider-using-dict-items
+        for key in story_dict:
             model = model_dict[key]
             model.uniform_sample = uniform_sample
             pids = demand_sample['PID', story_dict[key], '1'].values
             rids = model.generate_rid_samples(pids)
             rid_sample_dfs.append(pd.Series(rids, name=(hz, story_dict[key])))
+        # pylint: enable=consider-using-dict-items
 
     demand_sample_df = pd.concat(
         demand_sample_dict.values(), keys=demand_sample_dict.keys(), names=['hz']

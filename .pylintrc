@@ -24,7 +24,10 @@ ignore=CVS
 
 # Add files or directories matching the regex patterns to the ignore-list. The
 # regex matches against paths and can be in Posix or Windows format.
-ignore-paths=
+ignore-paths=^.*AZ_pelicun.*$,
+             ^.*RID_Project_Colab.*$,
+	     ^.*improved_methodology_demo.*$,
+	     ^.*ipynb_checkpoints.*$
 
 # Files or directories matching the regex patterns are skipped. The regex
 # matches against base names, not paths.
@@ -93,7 +96,9 @@ disable=raw-checker-failed,
 	redefined-outer-name,
 	singleton-comparison,
 	missing-function-docstring,
-	dangerous-default-value
+	dangerous-default-value,
+	unused-variable,
+	pointless-string-statement
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

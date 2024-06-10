@@ -1,3 +1,8 @@
+"""
+Exploring the option of a max-max plot.
+
+"""
+
 # Imports
 from itertools import product
 from tqdm import tqdm

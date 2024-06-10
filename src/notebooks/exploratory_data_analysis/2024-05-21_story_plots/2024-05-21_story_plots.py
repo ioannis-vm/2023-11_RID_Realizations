@@ -43,6 +43,7 @@ parameters.
 
 # %%
 # Imports
+# pylint: disable=wrong-import-position
 from pathlib import Path
 import os
 import numpy as np
@@ -52,6 +53,7 @@ from plotly.subplots import make_subplots
 from scipy.stats import norm
 from src import models
 from src import models_proprietary
+# pylint: enable=wrong-import-position
 
 # Change directory to project's root, if needed
 # (not needed when re-evaluating)
@@ -217,7 +219,7 @@ def get_pid_rid_pairs(system, stories, rc, story):
         pairs.loc[pairs['StoryDiff'] == 1, 'StoryDiffText'] = '1--2 stories'
         pairs.loc[pairs['StoryDiff'] == 2, 'StoryDiffText'] = '1--2 stories'
         pairs.loc[pairs['StoryDiff'] > 2, 'StoryDiffText'] = '>2 stories'
-        for thing in {'PIDStory', 'RIDStory'}:
+        for thing in ('PIDStory', 'RIDStory'):
             pairs[f'{thing}Text'] = 'Intermediate stories'
             if stories == '3':
                 pairs.loc[pairs[thing] <= 2, f'{thing}Text'] = 'First 2 stories'
@@ -227,24 +229,19 @@ def get_pid_rid_pairs(system, stories, rc, story):
 
         return pairs
 
-    # # stack locations
-    # pairs = pairs_all_stories.stack('loc', future_stack=True)
+    # filter story
+    pairs = pairs_all_stories.iloc[
+        :, pairs_all_stories.columns.get_level_values('loc') == story
+    ]
+    pairs.columns = pairs.columns.droplevel('loc')
 
-    else:
+    pairs = pairs.dropna(how='any')
+    rsns = pairs['rsn']['PID']
+    scaling = pairs['scaling_factor']['PID']
+    pairs = pairs.loc[:, 'value']
+    pairs = pairs.reset_index()
 
-        # filter story
-        pairs = pairs_all_stories.iloc[
-            :, pairs_all_stories.columns.get_level_values('loc') == story
-        ]
-        pairs.columns = pairs.columns.droplevel('loc')
-
-        pairs = pairs.dropna(how='any')
-        rsns = pairs['rsn']['PID']
-        scaling = pairs['scaling_factor']['PID']
-        pairs = pairs.loc[:, 'value']
-        pairs = pairs.reset_index()
-
-        return pairs, rsns, scaling
+    return pairs, rsns, scaling
 
 
 if story == 'max-max':

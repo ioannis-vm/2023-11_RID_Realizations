@@ -5,7 +5,6 @@ RID|PID models
 
 # pylint:disable=no-name-in-module
 
-
 from typing import Optional
 from typing import Literal
 from typing import Any
@@ -23,7 +22,7 @@ np.set_printoptions(formatter={'float': '{:0.5f}'.format})
 
 class Model:
     """
-    Base Model class.
+    Base class for conditional models with common functionality.
     """
 
     def __init__(self) -> None:
@@ -113,24 +112,6 @@ class Model:
         self.fit_meta = result
         assert result.success, "Minimization failed."
         self.parameters = result.x
-
-    def evaluate_inverse_cdf(self, quantile, pid):
-        """
-        Evaluate the inverse of the conditional RID|PID CDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
-
-    def evaluate_pdf(self, rid, pid, censoring_limit=None):
-        """
-        Evaluate the conditional RID|PID PDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
-
-    def evaluate_cdf(self, rid, pid):
-        """
-        Evaluate the conditional RID|PID CDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
 
     def get_mle_objective(self, parameters: npt.NDArray) -> float:
         # update the parameters
@@ -237,6 +218,91 @@ class Model:
             y = self.evaluate_cdf(x, np.array((midpoint,)))
             ax.plot(x, y, color='C1')
 
+    def evaluate_inverse_cdf(self, quantile, pid):
+        """
+        Evaluate the inverse of the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        """
+        Evaluate the conditional RID|PID PDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_cdf(self, rid, pid):
+        """
+        Evaluate the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+
+class BilinearModel(Model):
+    """
+    One parameter constant, the other varies in a bilinear fashion.
+    """
+
+    def bilinear_fnc(self, pid: npt.NDArray) -> npt.NDArray:
+        assert self.parameters is not None
+        theta_1_a, c_lambda_slope, _ = self.parameters
+        c_lambda_0 = 1.0e-8
+        lambda_values = np.ones_like(pid) * c_lambda_0
+        mask = pid >= theta_1_a
+        lambda_values[mask] = (pid[mask] - theta_1_a) * c_lambda_slope + c_lambda_0
+        return lambda_values
+
+    def evaluate_inverse_cdf(self, quantile, pid):
+        """
+        Evaluate the inverse of the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        """
+        Evaluate the conditional RID|PID PDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_cdf(self, rid, pid):
+        """
+        Evaluate the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+
+class TrilinearModel(Model):
+    """
+    One parameter constant, the other varies in a trilinear fashion.
+    """
+
+    def trilinear_fnc(self, pid: npt.NDArray, y0, m0, m1, m2, x0, x1) -> npt.NDArray:
+        y1 = y0 + m0 * x0
+        y2 = y1 + m1 * (x1 - x0)
+        res = m0 * pid + y0
+        mask = pid > x0
+        res[mask] = (pid[mask] - x0) * m1 + y1
+        mask = pid > x1
+        res[mask] = (pid[mask] - x1) * m2 + y2
+        return res
+
+    def evaluate_inverse_cdf(self, quantile, pid):
+        """
+        Evaluate the inverse of the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        """
+        Evaluate the conditional RID|PID PDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_cdf(self, rid, pid):
+        """
+        Evaluate the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
 
 class Model_P58(Model):
     """
@@ -278,73 +344,6 @@ class Model_P58(Model):
         delta_y, beta = self.parameters
         delta_val = self.delta_fnc(pid, delta_y)
         return 0.50 * erfc(-((np.log(rid / delta_val))) / (np.sqrt(2.0) * beta))
-
-
-class BilinearModel(Model):
-    """
-    One parameter constant, the other varies in a bilinear fashion.
-    """
-
-    def bilinear_fnc(self, pid: npt.NDArray) -> npt.NDArray:
-        assert self.parameters is not None
-        theta_1_a, c_lambda_slope, _ = self.parameters
-        c_lambda_0 = 1.0e-8
-        lambda_values = np.ones_like(pid) * c_lambda_0
-        mask = pid >= theta_1_a
-        lambda_values[mask] = (pid[mask] - theta_1_a) * c_lambda_slope + c_lambda_0
-        return lambda_values
-
-    def evaluate_inverse_cdf(self, quantile: float, pid: npt.NDArray):
-        """
-        Evaluate the inverse of the conditional RID|PID CDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
-
-    def evaluate_pdf(self, rid, pid, censoring_limit=None):
-        """
-        Evaluate the conditional RID|PID PDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
-
-    def evaluate_cdf(self, rid, pid):
-        """
-        Evaluate the conditional RID|PID CDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
-
-
-class TrilinearModel(Model):
-    """
-    One parameter constant, the other varies in a trilinear fashion.
-    """
-
-    def trilinear_fnc(self, pid: npt.NDArray, y0, m0, m1, m2, x0, x1) -> npt.NDArray:
-        y1 = y0 + m0 * x0
-        y2 = y1 + m1 * (x1 - x0)
-        res = m0 * pid + y0
-        mask = pid > x0
-        res[mask] = (pid[mask] - x0) * m1 + y1
-        mask = pid > x1
-        res[mask] = (pid[mask] - x1) * m2 + y2
-        return res
-
-    def evaluate_inverse_cdf(self, quantile: float, pid: npt.NDArray):
-        """
-        Evaluate the inverse of the conditional RID|PID CDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
-
-    def evaluate_pdf(self, rid, pid, censoring_limit=None):
-        """
-        Evaluate the conditional RID|PID PDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
-
-    def evaluate_cdf(self, rid, pid):
-        """
-        Evaluate the conditional RID|PID CDF.
-        """
-        raise NotImplementedError("Subclasses should implement this.")
 
 
 class Model_1_Weibull(BilinearModel):

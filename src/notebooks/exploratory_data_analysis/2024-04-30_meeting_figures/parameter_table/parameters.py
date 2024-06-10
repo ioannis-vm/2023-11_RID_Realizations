@@ -1,3 +1,8 @@
+"""
+Generates a parameter table.
+
+"""
+
 # Imports
 from itertools import product
 from tqdm import tqdm

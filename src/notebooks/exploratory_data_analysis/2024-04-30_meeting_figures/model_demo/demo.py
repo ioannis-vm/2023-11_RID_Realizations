@@ -1,3 +1,9 @@
+"""
+Figures to demonstrate how the model behaves when its parameters
+change.
+
+"""
+
 # Imports
 import numpy as np
 import matplotlib.pyplot as plt

@@ -50,15 +50,20 @@ sys.path.append(
     'src/notebooks/exploratory_data_analysis/2024-05-08_collapse_fragilities'
 )
 
+# %%
+# pylint: disable=wrong-import-position
+# Imports
 from itertools import product
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from scipy.stats import norm
+# pylint: disable=import-error
 from imports import get_collapse_data
 from imports import get_collapse_probabilities
 from imports import get_sa
 from imports import neg_log_likelihood
+# pylint: enable=import-error
 
 
 # %%
@@ -116,7 +121,7 @@ frag_df = pd.DataFrame(
     index=pd.MultiIndex.from_tuples(index),
     columns=['Theta_0', 'Theta_1'],
 ).rename_axis(index=['system', 'stories', 'rc'])
-frag_df
+
 
 # %%
 

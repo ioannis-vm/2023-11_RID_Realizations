@@ -27,8 +27,11 @@
 """
 ### Setup
 """
+
+# %%
 # Change directory to project's root, if needed
 # (not needed when re-evaluating)
+# pylint: disable=wrong-import-position
 from pathlib import Path
 import os
 

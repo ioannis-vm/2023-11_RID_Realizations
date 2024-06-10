@@ -84,7 +84,7 @@ class Model_1v0_Weibull(Model):
 
         return loss
 
-    def fit(self, method='quantile', **kwargs):
+    def fit(self, method='quantile'):
         # Initial values
         c_lamda = 0.30
         c_kapa = 1.30
@@ -185,7 +185,7 @@ class Model_1v1_Weibull(Model):
 
         return loss
 
-    def fit(self, method='quantile', **kwargs):
+    def fit(self, method='quantile'):
         # Initial values
         c_lamda_slope = 0.30
         c_kapa = 1.30
