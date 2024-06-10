@@ -12,7 +12,7 @@ from src import models
 
 def add_plot(ax, parameters):
 
-    model = models.Model_1_Weibull()
+    model = models.Model_Bilinear_Weibull()
     model.censoring_limit = 0.0025
     model.parameters = parameters
 

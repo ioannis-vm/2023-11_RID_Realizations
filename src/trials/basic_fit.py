@@ -4,9 +4,9 @@ Fit all models to the data and store the parameters.
 
 import matplotlib.pyplot as plt
 from src.models import Model_P58
-from src.models import Model_1_Weibull
-from src.models import Model_2_Gamma
-from src.models import Model_3_Beta
+from src.models import Model_Bilinear_Weibull
+from src.models import Model_Bilinear_Gamma
+from src.models import Model_Bilinear_Beta
 from src.handle_data import load_dataset
 from src.handle_data import remove_collapse
 from src.handle_data import only_drifts
@@ -51,7 +51,7 @@ def main():
 
     # Weibull, MLE
 
-    model = Model_1_Weibull()
+    model = Model_Bilinear_Weibull()
     model.add_data(pid_vals, rid_vals)
     model.censoring_limit = 0.0025
     model.fit(method='mle')
@@ -71,7 +71,7 @@ def main():
 
     # Weibull, quantile regression
 
-    model = Model_1_Weibull()
+    model = Model_Bilinear_Weibull()
     model.add_data(pid_vals, rid_vals)
     model.fit(method='quantiles')
 
@@ -89,7 +89,7 @@ def main():
 
     # Gamma, MLE
 
-    model = Model_2_Gamma()
+    model = Model_Bilinear_Gamma()
     model.add_data(pid_vals, rid_vals)
     model.censoring_limit = 0.0005
     model.fit(method='mle')
@@ -108,7 +108,7 @@ def main():
 
     # Beta, MLE
 
-    model = Model_3_Beta()
+    model = Model_Bilinear_Beta()
     model.add_data(pid_vals, rid_vals)
     model.censoring_limit = 0.0005
     model.fit(method='mle')

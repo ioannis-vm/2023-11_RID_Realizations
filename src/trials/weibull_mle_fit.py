@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 import seaborn as sns
 from tqdm import trange
 from src.models import Model
-from src.models import Model_1_Weibull
+from src.models import Model_Bilinear_Weibull
 
 
 # pylint: disable=missing-function-docstring, arguments-differ
@@ -327,13 +327,13 @@ def main():
     # Weibull with piecewise lambda function #
     ##########################################
 
-    model = Model_1_Weibull()
+    model = Model_Bilinear_Weibull()
     model.parameters = (0.01, 0.30, 1.30)  # c_lamda_slope, c_kapa
 
     pid = np.linspace(1e-8, 0.08, 1000)
     rid_samples = model.generate_rid_samples(pid)
 
-    other_model = Model_1_Weibull()
+    other_model = Model_Bilinear_Weibull()
     other_model.add_data(pid, rid_samples)
     other_model.censoring_limit = 0.002
     other_model.fit(method='mle')
@@ -357,13 +357,13 @@ def main():
     # Fit multiple times, get distribution for the parameters
 
     def get_params():
-        model = Model_1_Weibull()
+        model = Model_Bilinear_Weibull()
         model.parameters = (0.01, 0.30, 1.30)  # c_lamda_slope, c_kapa
 
         pid = np.linspace(1e-8, 0.08, 1000)
         rid_samples = model.generate_rid_samples(pid)
 
-        other_model = Model_1_Weibull()
+        other_model = Model_Bilinear_Weibull()
         other_model.add_data(pid, rid_samples)
         other_model.censoring_limit = 0.002
         other_model.fit(method='mle')

@@ -421,7 +421,7 @@ def generate_plot(
 
 def main():
 
-    selected_model = models.Model_Weibull_Trilinear()
+    selected_model = models.Model_Trilinear_Weibull()
     # selected_model = models.Model_1_Weibull()
 
     # Structural system:
@@ -523,9 +523,9 @@ def get_parameter_table():
         print(model, rc, system, stories)
         print()
         if model == 'bilinear':
-            selected_model = models.Model_1_Weibull()
+            selected_model = models.Model_Bilinear_Weibull()
         elif model == 'trilinear':
-            selected_model = models.Model_Weibull_Trilinear()
+            selected_model = models.Model_Trilinear_Weibull()
         else:
             raise ValueError('Invalid model: `{model}`.')
 
@@ -682,7 +682,7 @@ def get_parameter_table():
 
         row = (system, stories, rc)
         parameters = param_df_trilinear.loc[row, :]
-        temp_model = models.Model_Weibull_Trilinear()
+        temp_model = models.Model_Trilinear_Weibull()
         temp_model.parameters = parameters.values
         model_pid = np.linspace(0.00, 0.06, 1000)
         lambda_vals, kappa_vals = temp_model.obtain_lambda_and_kappa(model_pid)

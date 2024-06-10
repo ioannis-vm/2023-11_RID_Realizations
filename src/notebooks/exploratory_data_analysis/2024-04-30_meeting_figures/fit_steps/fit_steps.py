@@ -93,7 +93,7 @@ fig, ax = plt.subplots(figsize=(3, 3))
 ax.scatter(
     data['RID'].values, data['PID'].values, color='darkgray', marker='.', s=0.1
 )
-model = models.Model_1_Weibull()
+model = models.Model_Bilinear_Weibull()
 model.add_data(data['PID'].values, data['RID'].values)
 model.censoring_limit = 0.0025
 model.fit(method='mle')

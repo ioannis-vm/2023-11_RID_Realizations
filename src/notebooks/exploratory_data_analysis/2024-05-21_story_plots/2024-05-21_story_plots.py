@@ -65,7 +65,7 @@ if Path(os.getcwd()).name != '2023-11_RID_Realizations':
 # Select case, set model parameters
 
 # Simple and powerful.
-selected_model = models.Model_1_Weibull()
+selected_model = models.Model_Bilinear_Weibull()
 # More flexible, still work in progress.
 # selected_model = models.Model_Weibull_Trilinear()
 

@@ -54,8 +54,8 @@ def obtain_parameters(
     model_objects = {}
 
     model_classes = {
-        'weibull_bilinear': models.Model_1_Weibull,
-        'gamma_bilinear': models.Model_2_Gamma,
+        'weibull_bilinear': models.Model_Bilinear_Weibull,
+        'gamma_bilinear': models.Model_Bilinear_Gamma,
     }
     for the_case in cases:
         case_df: pd.DataFrame = df[the_case].dropna()  # type: ignore

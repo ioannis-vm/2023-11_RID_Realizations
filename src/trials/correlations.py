@@ -44,7 +44,7 @@ def main():
         analysis_rid_vals = case_df.dropna()["RID"].to_numpy().reshape(-1)
         analysis_pid_vals = case_df.dropna()["PID"].to_numpy().reshape(-1)
 
-        model_str = models.Model_1_Weibull()
+        model_str = models.Model_Bilinear_Weibull()
         model_str.add_data(analysis_pid_vals, analysis_rid_vals)
         model_str.censoring_limit = 0.0025
         model_str.fit(method='mle')
