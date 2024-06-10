@@ -3,7 +3,7 @@ Fit all models to the data and store the parameters.
 """
 
 import matplotlib.pyplot as plt
-from src.models import Model_0_P58
+from src.models import Model_P58
 from src.models import Model_1_Weibull
 from src.models import Model_2_Gamma
 from src.models import Model_3_Beta
@@ -38,9 +38,9 @@ def main():
     # # <<<<<<<<<<<<<<<<<<<<<<<
 
     # FEMA P-58
-    model = Model_0_P58()
+    model = Model_P58()
     model.add_data(pid_vals, rid_vals)
-    model.fit(
+    model.set(
         delta_y=0.01, beta=0.60
     )  # values hand-picked for ("smrf", "9", "ii", "1", "1")
 

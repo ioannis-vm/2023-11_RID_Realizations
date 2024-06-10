@@ -59,7 +59,7 @@ class Model:
         assert len(self.raw_rid) == num_vals
         rid_vals_sorted = self.raw_rid[idsort]
         pid_vals_sorted = self.raw_pid[idsort]
-        group_size = int(len(self.raw_rid) * 0.10)
+        group_size = int(len(self.raw_rid) * 0.075)
         rolling_pid = np.array(
             [
                 np.mean(pid_vals_sorted[i : i + group_size])
@@ -90,11 +90,29 @@ class Model:
         self.rolling_rid_20 = rolling_rid_20
         self.rolling_rid_80 = rolling_rid_80
 
-    def fit(self, *args, **kwargs):
-        """
-        Obtain the parameters by fitting the model to the data
-        """
-        raise NotImplementedError("Subclasses should implement this.")
+    def fit(
+        self,
+        method: Literal['mle', 'quantiles'] = 'mle',
+    ) -> None:
+        # Initial values
+
+        if method == 'quantiles':
+            use_method = self.get_quantile_objective
+        elif method == 'mle':
+            use_method = self.get_mle_objective
+
+        result = minimize(
+            use_method,
+            self.parameters,
+            bounds=self.parameter_bounds,
+            method="Nelder-Mead",
+            options={"maxiter": 10000},
+            tol=1e-10,
+        )
+
+        self.fit_meta = result
+        assert result.success, "Minimization failed."
+        self.parameters = result.x
 
     def evaluate_inverse_cdf(self, quantile, pid):
         """
@@ -220,7 +238,7 @@ class Model:
             ax.plot(x, y, color='C1')
 
 
-class Model_0_P58(Model):
+class Model_P58(Model):
     """
     FEMA P-58 model.
     """
@@ -233,12 +251,15 @@ class Model_0_P58(Model):
         delta[mask] = pid[mask] - 3.00 * delta_y
         return delta
 
-    def fit(self, *args, delta_y=0.00, beta=0.00, **kwargs) -> None:
+    def set(self, delta_y=0.00, beta=0.00) -> None:
         """
         The P-58 model requires the user to specify the parameters
         directly.
         """
         self.parameters = np.array((delta_y, beta))
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        raise NotImplementedError()
 
     def evaluate_inverse_cdf(self, quantile: float, pid: npt.NDArray) -> npt.NDArray:
         """
@@ -266,12 +287,12 @@ class BilinearModel(Model):
 
     def bilinear_fnc(self, pid: npt.NDArray) -> npt.NDArray:
         assert self.parameters is not None
-        theta_1_a, c_lamda_slope, _ = self.parameters
-        c_lamda_0 = 1.0e-8
-        lamda = np.ones_like(pid) * c_lamda_0
+        theta_1_a, c_lambda_slope, _ = self.parameters
+        c_lambda_0 = 1.0e-8
+        lambda_values = np.ones_like(pid) * c_lambda_0
         mask = pid >= theta_1_a
-        lamda[mask] = (pid[mask] - theta_1_a) * c_lamda_slope + c_lamda_0
-        return lamda
+        lambda_values[mask] = (pid[mask] - theta_1_a) * c_lambda_slope + c_lambda_0
+        return lambda_values
 
     def evaluate_inverse_cdf(self, quantile: float, pid: npt.NDArray):
         """
@@ -291,27 +312,39 @@ class BilinearModel(Model):
         """
         raise NotImplementedError("Subclasses should implement this.")
 
-    def fit(
-        self, *args, method: Literal['mle', 'quantiles'] = 'mle', **kwargs
-    ) -> None:
-        # Initial values
 
-        if method == 'quantiles':
-            use_method = self.get_quantile_objective
-        elif method == 'mle':
-            use_method = self.get_mle_objective
+class TrilinearModel(Model):
+    """
+    One parameter constant, the other varies in a trilinear fashion.
+    """
 
-        result = minimize(
-            use_method,
-            self.parameters,
-            bounds=self.parameter_bounds,
-            method="Nelder-Mead",
-            options={"maxiter": 10000},
-            tol=1e-6,
-        )
-        self.fit_meta = result
-        assert result.success, "Minimization failed."
-        self.parameters = result.x
+    def trilinear_fnc(self, pid: npt.NDArray, y0, m0, m1, m2, x0, x1) -> npt.NDArray:
+        y1 = y0 + m0 * x0
+        y2 = y1 + m1 * (x1 - x0)
+        res = m0 * pid + y0
+        mask = pid > x0
+        res[mask] = (pid[mask] - x0) * m1 + y1
+        mask = pid > x1
+        res[mask] = (pid[mask] - x1) * m2 + y2
+        return res
+
+    def evaluate_inverse_cdf(self, quantile: float, pid: npt.NDArray):
+        """
+        Evaluate the inverse of the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_pdf(self, rid, pid, censoring_limit=None):
+        """
+        Evaluate the conditional RID|PID PDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
+
+    def evaluate_cdf(self, rid, pid):
+        """
+        Evaluate the conditional RID|PID CDF.
+        """
+        raise NotImplementedError("Subclasses should implement this.")
 
 
 class Model_1_Weibull(BilinearModel):
@@ -358,6 +391,87 @@ class Model_1_Weibull(BilinearModel):
         _, _, theta_3 = self.parameters
         bilinear_fnc_val = self.bilinear_fnc(pid)
         return sp.stats.weibull_min.ppf(quantile, theta_3, 0.00, bilinear_fnc_val)
+
+
+class Model_Weibull_Trilinear(TrilinearModel):
+    """
+    Weibull model
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        # initial parameters
+        self.parameters = np.array((0.005, 0.15, 0.020, 0.40, 1.20, 1.20))
+        # parameter names
+        self.parameter_names = [
+            'pid_0',
+            'lambda_slope_0',
+            'pid_1',
+            'lambda_slope_1',
+            'kappa_0',
+            'kappa_1',
+        ]
+        # bounds
+        self.parameter_bounds = [
+            (0.00, 1.0e3),
+            (0.00, 0.20),
+            (0.00, 1.0e3),
+            (0.00, 1.0e3),
+            (0.01, 1.0e3),
+            (0.01, 1.0e3),
+        ]
+
+    def obtain_lambda_and_kappa(
+        self,
+        pid: npt.NDArray,
+    ) -> tuple[npt.NDArray, npt.NDArray]:
+        assert self.parameters is not None
+        (
+            pid_0,  # x0
+            lambda_slope_0,  # m1
+            pid_1,  # x1
+            lambda_slope_1,  # m2
+            kappa_0,  # y0, y1
+            kappa_1,  # y2
+        ) = self.parameters
+        # calculate m0 for kappa
+        kappa_slope_0 = (kappa_1 - kappa_0) / (pid_1 - pid_0)
+        lambda_trilinear: npt.NDArray = self.trilinear_fnc(
+            pid, 1e-6, 0.00, lambda_slope_0, lambda_slope_1, pid_0, pid_1
+        )
+        kappa_trilinear: npt.NDArray = self.trilinear_fnc(
+            pid, kappa_0, 0.00, kappa_slope_0, 0.00, pid_0, pid_1
+        )
+        return lambda_trilinear, kappa_trilinear
+
+    def evaluate_pdf(
+        self,
+        rid: npt.NDArray,
+        pid: npt.NDArray,
+        censoring_limit: Optional[float] = None,
+    ) -> npt.NDArray:
+        lambda_trilinear, kappa_trilinear = self.obtain_lambda_and_kappa(pid)
+        pdf_val = sp.stats.weibull_min.pdf(
+            rid, kappa_trilinear, 0.00, lambda_trilinear
+        )
+        pdf_val[pdf_val < 1e-6] = 1e-6
+        if censoring_limit:
+            censored_range_mass = self.evaluate_cdf(
+                np.full(len(pid), censoring_limit), pid
+            )
+            mask = rid <= censoring_limit
+            pdf_val[mask] = censored_range_mass[mask]
+        return pdf_val
+
+    def evaluate_cdf(self, rid: npt.NDArray, pid: npt.NDArray) -> npt.NDArray:
+        lambda_trilinear, kappa_trilinear = self.obtain_lambda_and_kappa(pid)
+        return sp.stats.weibull_min.cdf(rid, kappa_trilinear, 0.00, lambda_trilinear)
+
+    def evaluate_inverse_cdf(self, quantile: float, pid: npt.NDArray) -> npt.NDArray:
+        lambda_trilinear, kappa_trilinear = self.obtain_lambda_and_kappa(pid)
+        return sp.stats.weibull_min.ppf(
+            quantile, kappa_trilinear, 0.00, lambda_trilinear
+        )
 
 
 class Model_2_Gamma(BilinearModel):
@@ -445,9 +559,7 @@ class Model_3_Beta(BilinearModel):
         c_alpha = self.bilinear_fnc(pid)
         return sp.stats.beta.cdf(rid, c_alpha, c_beta)
 
-    def evaluate_inverse_cdf(
-        self, quantile: float, pid: npt.NDArray
-    ) -> npt.NDArray:
+    def evaluate_inverse_cdf(self, quantile: float, pid: npt.NDArray) -> npt.NDArray:
         assert self.parameters is not None
         _, _, c_beta = self.parameters
         c_alpha = self.bilinear_fnc(pid)

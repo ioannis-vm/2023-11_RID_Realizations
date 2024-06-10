@@ -47,19 +47,18 @@ import seaborn as sns
 # Change directory to project's root, if needed
 # (not needed when re-evaluating)
 if Path(os.getcwd()).name != '2023-11_RID_Realizations':
-    os.chdir('../../')
+    os.chdir('../../../../')
 
-# from temp.max_drift.methods import test
 
 # %%
 # plotting parameters
-xmin, xmax = -0.005, 0.04  # rid
-ymin, ymax = -0.005, 0.08  # pid
+xmin, xmax = -0.004, 0.04  # rid
+ymin, ymax = -0.004, 0.08  # pid
 sns.set_style("whitegrid")
 
 
 # %%
-df = pd.read_parquet('data/edp_extended_cs.parquet')
+df = pd.read_parquet('data/edp_extended_old/edp_extended_cs.parquet')
 df.index = df.index.reorder_levels(
     ['system', 'stories', 'rc', 'dir', 'edp', 'hz', 'gm', 'loc']
 )
@@ -85,28 +84,102 @@ def get_pid_rid_pairs(system, stories, rc, direction):
     -------
     pd.DataFrame
         Dataframe with PID-RID pairs, with unstable collapse cases
-        removed (transient drift exceeding 10%).
+        removed (transient drift exceeding 10%). It also contains the
+        story where the maximum PID or RID was observed.
 
     """
+
+    # # debug
+    # df_archetype = df.loc[('1.0', system, stories, rc, direction), 'value']
+    # x = df_archetype.unstack('edp').loc[:, ['PID', 'RID']].dropna(how='all')
+    # y = x[x['PID']<0.04957999]
+    # y = y[y['PID']>0.04957998]
+
     # subset based on above parameters
     df_archetype = df.loc[(system, stories, rc, direction), :]
     # get PID and RID
     pid = df_archetype.loc['PID', :]['value']
+    pid_story = pid.groupby(by=['hz', 'gm']).idxmax().apply(lambda x: int(x[-1]))
     pid = pid.groupby(by=['hz', 'gm']).max()
     rid = df_archetype.loc['RID', :]['value']
+    rid_story = rid.groupby(by=['hz', 'gm']).idxmax().apply(lambda x: int(x[-1]))
     rid = rid.groupby(by=['hz', 'gm']).max()
 
     # remove cases where PID > 0.10 (unstable collapse)
     idx_keep = pid[pid < 0.10].index
     pid = pid.loc[idx_keep]
+    pid_story = pid_story.loc[idx_keep]
     rid = rid.loc[idx_keep]
+    rid_story = rid_story.loc[idx_keep]
 
-    pairs = pd.concat((pid, rid), keys=['PID', 'RID'], axis=1)
+    pairs = pd.concat(
+        (pid, rid, pid_story, rid_story),
+        keys=['PID', 'RID', 'PIDStory', 'RIDStory'],
+        axis=1,
+    )
     pairs = pairs.reset_index()
-    for thing in ('hz', 'gm'):
-        pairs[thing] = pairs[thing].astype(float)
+    pairs['PID'] = pairs['PID'].astype(float)
+    pairs['RID'] = pairs['RID'].astype(float)
+    pairs['PIDStory'] = pairs['PIDStory'].astype(int)
+    pairs['RIDStory'] = pairs['RIDStory'].astype(int)
+
+    # Partitioning used for plotting
+    pairs['StoryDiff'] = (pairs['PIDStory'] - pairs['RIDStory']).abs()
+    pairs['StoryDiffText'] = ''
+    pairs.loc[pairs['StoryDiff'] == 0, 'StoryDiffText'] = 'Same story'
+    pairs.loc[pairs['StoryDiff'] == 1, 'StoryDiffText'] = '1--2 stories'
+    pairs.loc[pairs['StoryDiff'] == 2, 'StoryDiffText'] = '1--2 stories'
+    pairs.loc[pairs['StoryDiff'] > 2, 'StoryDiffText'] = '>2 stories'
+    for thing in {'PIDStory', 'RIDStory'}:
+        pairs[f'{thing}Text'] = 'Intermediate stories'
+        if stories == '3':
+            pairs.loc[pairs[thing] <= 2, f'{thing}Text'] = 'First 2 stories'
+        else:
+            pairs.loc[pairs[thing] <= 3, f'{thing}Text'] = 'First 3 stories'
+        pairs.loc[pairs[thing] == int(stories), f'{thing}Text'] = 'Last story'
+
     return pairs
 
+
+# %% [markdown]
+"""
+### Are maximum RIDs observed at the same story as that of the PIDs?
+"""
+
+# %%
+for system, stories, rc in product(
+    ('smrf', 'scbf', 'brbf'), ('3', '6', '9'), ('ii', 'iv')
+):
+    plt.close()
+    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+    for i, direction in enumerate(('x', 'y')):
+        sns.scatterplot(
+            data=get_pid_rid_pairs(system, stories, rc, direction),
+            x='RID',
+            y='PID',
+            hue='StoryDiffText',
+            ax=axs[i],
+            palette={
+                'Same story': "#7B9F35",
+                '1--2 stories': "#226666",
+                '>2 stories': "#AA3939",
+            },
+            s=10,
+        )
+        sns.despine(ax=axs[i])
+        axs[i].set(
+            xlim=(xmin, xmax),
+            ylim=(ymin, ymax),
+            title=' '.join((system, stories, rc, direction)),
+        )
+        axs[i].plot([0.00, 1.00], [0.00, 1.00], color='black', linewidth=0.30)
+    plt.show()
+plt.close()
+
+# %% [markdown]
+"""
+### At what part of the building are PIDs observed?
+"""
 
 # %%
 for system, stories, rc in product(
@@ -118,8 +191,15 @@ for system, stories, rc in product(
             data=get_pid_rid_pairs(system, stories, rc, direction),
             x='RID',
             y='PID',
-            hue='hz',
+            hue='PIDStoryText',
             ax=axs[i],
+            palette={
+                'First 2 stories': "#7B9F35",
+                'First 3 stories': "#7B9F35",
+                'Intermediate stories': "#226666",
+                'Last story': "#AA3939",
+            },
+            s=10,
         )
         sns.despine(ax=axs[i])
         axs[i].set(
@@ -128,113 +208,43 @@ for system, stories, rc in product(
             title=' '.join((system, stories, rc, direction)),
         )
     plt.show()
+plt.close()
+
 
 # %% [markdown]
 """
-**Comment on the results**: It's clear that a pattern exists.
-We would like to know whether the maximum PID—maximum RID pairs
-correspond to the same story, or if there is a large number of cases
-where they don't.
-To find out, we construct a bar chart with the number of cases where
-the pair corresponds to the same story versus otherwise.
+### At what part of the building are RIDs observed?
 """
 
-
 # %%
-def num_story_difference(system, stories, rc, direction, censoring=False):
-    """
-    Max pid across stories is compared against max RID across
-    stories. But they might not occur at the same story. This function
-    checks where they occur and calculates the difference. E.g. if max
-    PID is story 1 and max RID is story 2, it returns 1. If the max's
-    occur at the same story, returns 0. The actual return type is a
-    pd.Series for all hazard level - ground motion combinations
-    corresponding to the given inputs.
-
-    Parameters
-    ----------
-    system: str
-        Any of {smrf, scbf, brbf}
-    stories: str
-        Any of {3, 6, 9}
-    rc: str
-        Any of {ii, iv}
-    direction: str
-        Any of {x, y}
-    censoring: bool
-        If True, only consider results where RID is higher than 0.25%.
-
-    Returns
-    -------
-    pd.DataFrame
-        in `story difference`, it contains the number of stories
-        between where the maximum PID was observed versus where the
-        maximum RID was observed.
-        in `large drift` it contains a boolean flag indicating that
-        PID was greater than 0.25%.
-
-    """
-    # subset based on above parameters
-    df_archetype = df.loc[(system, stories, rc, direction), :]
-    # get PID and RID
-    pid = df_archetype.loc['PID', :]['value']
-    pid_idxmax = pid.groupby(by=['hz', 'gm']).idxmax()
-    pid = pid.groupby(by=['hz', 'gm']).max()
-    rid = df_archetype.loc['RID', :]['value']
-    rid_idxmax = rid.groupby(by=['hz', 'gm']).idxmax()
-    rid = rid.groupby(by=['hz', 'gm']).max()
-
-    # remove cases where PID > 0.10 (unstable collapse)
-    idx_keep = pid[pid < 0.10].index
-    pid_idxmax = pid_idxmax.loc[idx_keep]
-    rid_idxmax = rid_idxmax.loc[idx_keep]
-    rid = rid.loc[idx_keep]
-    pid = pid.loc[idx_keep]
-
-    if censoring:
-        idx_keep = rid[rid > 0.025].index
-        pid_idxmax = pid_idxmax.loc[idx_keep]
-        rid_idxmax = rid_idxmax.loc[idx_keep]
-
-    pairs = pd.concat((pid_idxmax, rid_idxmax), keys=['PID', 'RID'], axis=1)
-
-    for column in pairs.columns:
-        pairs[column] = pairs[column].apply(lambda x: int(x[-1]))
-
-    pairs['story difference'] = (pairs['RID'] - pairs['PID']).abs()
-    pairs['large drift'] = rid > 0.025
-
-    return pairs
-
-
-# %%
-for rc, stories, system in product(
-    ('ii', 'iv'),
-    ('3', '6', '9'),
-    ('smrf', 'scbf', 'brbf'),
+for system, stories, rc in product(
+    ('smrf', 'scbf', 'brbf'), ('3', '6', '9'), ('ii', 'iv')
 ):
-    fig, axs = plt.subplots(1, 2, figsize=(6, 2))
-    for i, censoring in enumerate((False, True)):
-        sns.countplot(
-            data=num_story_difference(system, stories, rc, 'x', censoring),
-            x='story difference',
+    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+    for i, direction in enumerate(('x', 'y')):
+        sns.scatterplot(
+            data=get_pid_rid_pairs(system, stories, rc, direction),
+            x='RID',
+            y='PID',
+            hue='RIDStoryText',
             ax=axs[i],
+            palette={
+                'First 2 stories': "#7B9F35",
+                'First 3 stories': "#7B9F35",
+                'Intermediate stories': "#226666",
+                'Last story': "#AA3939",
+            },
+            s=10,
         )
         sns.despine(ax=axs[i])
         axs[i].set(
-            title=' '.join((system, stories, rc, 'x', str(censoring))),
+            xlim=(xmin, xmax),
+            ylim=(ymin, ymax),
+            title=' '.join((system, stories, rc, direction)),
         )
     plt.show()
+plt.close()
+
 
 # %% [markdown]
-"""
-Note: The plots are only for the x direction, but the y direction is
-    very similar.
-**Comment on the results**:
-- Considering the results as a whole, for taller archetypes usually
-    the maximum PID occurs at a different floor than the maximum PID.
-- The same applies to a lesser extent for RC IV, but the fact that we
-    have fewer large PID-RID pairs for those might have an impact.
-- Focusing specifically on above-censoring RID results, it's much more
-    common for the RID-PID pair to be coming from the same story.
-"""
+#

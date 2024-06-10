@@ -50,7 +50,7 @@ def generate_figure(system, stories, rc, model_df, method, data_gathering_approa
             if data_gathering_approach == 'separate_directions':
                 group = int(i_col / 2)
                 story = str(i_row + 1 + 3 * group)
-                direction = str(i_col % 2 + 1)
+                direction = drc[str(i_col % 2 + 1)]
                 model = df[(story, direction)]
             else:
                 group = i_col
@@ -74,7 +74,7 @@ def generate_figure(system, stories, rc, model_df, method, data_gathering_approa
                 fontsize=4,
             )
             if data_gathering_approach == 'separate_directions':
-                text = f'{story}{drc[direction]}'
+                text = f'{story}{direction}'
             else:
                 text = f'{story}'
             axs[i_row, i_col].text(

@@ -127,9 +127,9 @@ for system, stories, rc in tqdm(
     ax.plot(model_rid_20, model_pid, 'C0', linestyle='dashed', zorder=10)
     ax.plot(model_rid_80, model_pid, 'C0', linestyle='dashed', zorder=10)
 
-    fema_model = models.Model_0_P58()
+    fema_model = models.Model_P58()
     fema_model.add_data(data['PID'].values, data['RID'].values)
-    fema_model.fit(delta_y=yield_drift[system] / 100.00, beta=0.80)
+    fema_model.set(delta_y=yield_drift[system] / 100.00, beta=0.80)
 
     model_rid_50 = fema_model.evaluate_inverse_cdf(0.50, model_pid)
     model_rid_20 = fema_model.evaluate_inverse_cdf(0.20, model_pid)
