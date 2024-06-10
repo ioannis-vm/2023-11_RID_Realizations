@@ -17,3 +17,5 @@ todo.org
 /.ropeproject/
 /extra/RID_Project_Colab/
 /src/models_proprietary.py
+*.parquet
+*.html
