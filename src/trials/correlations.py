@@ -64,7 +64,7 @@ def main():
             for x in df_hz.columns.get_level_values('edp')
         ]
 
-        asmt = Assessment({"PrintLog": False})  # no seed, debug
+        asmt = Assessment({"PrintLog": False, "Seed": 1})
         asmt.stories = 9
         asmt.demand.load_sample(df_hz)
         asmt.demand.calibrate_model(

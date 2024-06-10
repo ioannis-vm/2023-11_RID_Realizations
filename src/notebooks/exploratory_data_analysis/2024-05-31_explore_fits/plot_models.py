@@ -162,11 +162,6 @@ def generate_plot(
     # weibull_subset = weibull_subset[weibull_subset['PID'] > 0.02]
     pids = weibull_subset['PID'].values
     rids = weibull_subset['RID'].values
-    # DEBUG
-    # for _ in range(10):
-    #     weibull_subset = pd.concat(
-    #         (weibull_subset, weibull_subset[weibull_subset['PID'] < 0.02])
-    #     )
     pelicun_fitted_model.add_data(pids, rids)
     pelicun_fitted_model.censoring_limit = 0.00025
     pelicun_fitted_model.fit(method='mle')

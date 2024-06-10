@@ -89,12 +89,6 @@ def get_pid_rid_pairs(system, stories, rc, direction):
 
     """
 
-    # # debug
-    # df_archetype = df.loc[('1.0', system, stories, rc, direction), 'value']
-    # x = df_archetype.unstack('edp').loc[:, ['PID', 'RID']].dropna(how='all')
-    # y = x[x['PID']<0.04957999]
-    # y = y[y['PID']>0.04957998]
-
     # subset based on above parameters
     df_archetype = df.loc[(system, stories, rc, direction), :]
     # get PID and RID
