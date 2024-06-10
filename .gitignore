@@ -16,3 +16,4 @@ todo.org
 *.ipynb
 /.ropeproject/
 /extra/RID_Project_Colab/
+/src/models_proprietary.py
